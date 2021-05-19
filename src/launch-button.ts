@@ -1,38 +1,32 @@
-import { LitElement, html, PropertyValues, css } from "lit";
-import { customElement } from "lit/decorators.js";
-import { startProvisioning } from "./provision";
-import "@material/mwc-button";
+import { LitElement, html, PropertyValues } from "lit";
 
-@customElement("improv-wifi-launch-button")
 class LaunchButton extends LitElement {
+  public static isSupported = "bluetooth" in navigator;
+  public static noSupportMsg =
+    "Your browser does not support bluetooth provisioning. Use Google Chrome or Microsoft Edge.";
+
   protected render() {
-    return "bluetooth" in navigator
+    return LaunchButton.isSupported
       ? html`
           <slot>
-            <mwc-button label="Connect device to Wi-Fi"></mwc-button>
+            <button>Connect device to Wi-Fi</button>
           </slot>
         `
-      : html`Your browser does not support bluetooth provisioning. Use Google
-        Chrome or Microsoft Edge.`;
+      : html`${LaunchButton.noSupportMsg}`;
   }
 
   protected firstUpdated(changedProps: PropertyValues) {
     super.firstUpdated(changedProps);
-    this.addEventListener("click", (ev) => {
+    this.addEventListener("mouseover", () => {
+      // Preload
+      import("./provision");
+    });
+    this.addEventListener("click", async (ev) => {
       ev.preventDefault();
-      startProvisioning();
+      const mod = await import("./provision");
+      mod.startProvisioning();
     });
   }
-
-  static styles = css`
-    :host {
-      --mdc-theme-primary: #03a9f4;
-    }
-  `;
 }
 
-declare global {
-  interface HTMLElementTagNameMap {
-    "improv-wifi-launch-button": LaunchButton;
-  }
-}
+customElements.define("improv-wifi-launch-button", LaunchButton);

@@ -1,11 +1,26 @@
-import typescript from '@rollup/plugin-typescript';
-import { nodeResolve } from '@rollup/plugin-node-resolve';
+import { nodeResolve } from "@rollup/plugin-node-resolve";
+import { terser } from "rollup-plugin-terser";
 
-export default {
-  input: 'src/index.ts',
+const config = {
+  input: "dist/launch-button.js",
   output: {
-    dir: 'dist',
-    format: 'module',
+    dir: "dist/web",
+    format: "module",
   },
-  plugins: [typescript(), nodeResolve()],
+  preserveEntrySignatures: false,
+  plugins: [nodeResolve()],
 };
+
+if (process.env.NODE_ENV === "production") {
+  config.plugins.push(
+    terser({
+      ecma: 2019,
+      toplevel: true,
+      output: {
+        comments: false,
+      },
+    })
+  );
+}
+
+export default config;

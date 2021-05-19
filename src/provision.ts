@@ -1,7 +1,4 @@
-import {
-  IMPROV_BLE_CURRENT_STATE_CHARACTERISTIC,
-  IMPROV_BLE_SERVICE,
-} from "./const";
+import { IMPROV_BLE_SERVICE } from "./const";
 import "./provision-dialog";
 
 const DEBUG = true;
