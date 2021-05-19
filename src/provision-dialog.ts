@@ -193,6 +193,9 @@ class ProvisionDialog extends LitElement {
   }
 
   private async _connect() {
+    // Some OSes do not support parallel GATT commands
+    // https://github.com/WebBluetoothCG/web-bluetooth/issues/188#issuecomment-255121220
+
     try {
       await this.device.gatt!.connect();
 
@@ -200,12 +203,15 @@ class ProvisionDialog extends LitElement {
         IMPROV_BLE_SERVICE
       );
 
-      [this._currentStateChar, this._errorStateChar, this._rpcChar] =
-        await Promise.all([
-          service.getCharacteristic(IMPROV_BLE_CURRENT_STATE_CHARACTERISTIC),
-          service.getCharacteristic(IMPROV_BLE_ERROR_STATE_CHARACTERISTIC),
-          service.getCharacteristic(IMPROV_BLE_RPC_CHARACTERISTIC),
-        ]);
+      this._currentStateChar = await service.getCharacteristic(
+        IMPROV_BLE_CURRENT_STATE_CHARACTERISTIC
+      );
+      this._errorStateChar = await service.getCharacteristic(
+        IMPROV_BLE_ERROR_STATE_CHARACTERISTIC
+      );
+      this._rpcChar = await service.getCharacteristic(
+        IMPROV_BLE_RPC_CHARACTERISTIC
+      );
 
       this._currentStateChar.startNotifications();
       this._currentStateChar.addEventListener(
@@ -219,10 +225,8 @@ class ProvisionDialog extends LitElement {
         (ev: any) => this._handleImprovErrorStateChange(ev.target.value)
       );
 
-      const [curState, errorState] = await Promise.all([
-        this._currentStateChar.readValue(),
-        this._errorStateChar.readValue(),
-      ]);
+      const curState = await this._currentStateChar.readValue();
+      const errorState = await this._errorStateChar.readValue();
 
       this._handleImprovCurrentStateChange(curState);
       this._handleImprovErrorStateChange(errorState);
