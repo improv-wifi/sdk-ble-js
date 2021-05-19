@@ -21,4 +21,4 @@ jobs:
           node-version: 16
       - run: yarn install --frozen-lockfile
       - run: script/build
-      - run: prettier --check src
+      - run: yarn prettier --check src

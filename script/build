@@ -4,4 +4,4 @@ set -e
 cd "$(dirname "$0")/.."
 
 rm -rf dist
-NODE_ENV=production rollup -c
+NODE_ENV=production yarn rollup -c
