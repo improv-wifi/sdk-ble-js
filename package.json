@@ -1,0 +1,29 @@
+{
+  "name": "improv-wifi-sdk",
+  "version": "0.0.1",
+  "description": "Improv Wi-Fi SDK for the browser",
+  "main": "dist/index.js",
+  "repository": "https://github.com/improv-wifi/sdk-js",
+  "author": "Improv Wi-Fi maintainers",
+  "license": "Apache-2.0",
+  "scripts": {
+    "prepublishOnly": "script/build"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^13.0.0",
+    "@rollup/plugin-typescript": "^8.2.1",
+    "@types/web-bluetooth": "^0.0.9",
+    "prettier": "^2.3.0",
+    "rollup": "^2.48.0",
+    "serve": "^11.3.2",
+    "typescript": "^4.2.4"
+  },
+  "dependencies": {
+    "@material/mwc-button": "^0.21.0",
+    "@material/mwc-circular-progress": "^0.21.0",
+    "@material/mwc-dialog": "^0.21.0",
+    "@material/mwc-textfield": "^0.21.0",
+    "lit": "^2.0.0-rc.2",
+    "tslib": "^2.2.0"
+  }
+}
