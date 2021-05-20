@@ -4,24 +4,22 @@ class LaunchButton extends HTMLElement {
   private renderRoot?: ShadowRoot;
 
   public connectedCallback() {
-    this.update();
-  }
+    if (this.renderRoot) {
+      return;
+    }
 
-  protected update() {
-    if (!this.renderRoot) {
-      this.renderRoot = this.attachShadow({ mode: "open" });
+    this.renderRoot = this.attachShadow({ mode: "open" });
 
-      if (LaunchButton.isSupported) {
-        this.addEventListener("mouseover", () => {
-          // Preload
-          import("./provision");
-        });
-        this.addEventListener("click", async (ev) => {
-          ev.preventDefault();
-          const mod = await import("./provision");
-          mod.startProvisioning();
-        });
-      }
+    if (LaunchButton.isSupported) {
+      this.addEventListener("mouseover", () => {
+        // Preload
+        import("./provision");
+      });
+      this.addEventListener("click", async (ev) => {
+        ev.preventDefault();
+        const mod = await import("./provision");
+        mod.startProvisioning();
+      });
     }
 
     this.renderRoot.innerHTML = LaunchButton.isSupported
