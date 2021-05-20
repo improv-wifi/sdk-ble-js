@@ -7,10 +7,6 @@ class LaunchButton extends HTMLElement {
     this.update();
   }
 
-  public attributeChangedCallback() {
-    this.update();
-  }
-
   protected update() {
     if (!this.renderRoot) {
       this.renderRoot = this.attachShadow({ mode: "open" });
