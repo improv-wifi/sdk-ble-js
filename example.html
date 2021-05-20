@@ -7,10 +7,14 @@
     <improv-wifi-launch-button></improv-wifi-launch-button>
     <p>Custom launch button:</p>
     <improv-wifi-launch-button>
-      <a href="#">Launch improv</a>
+      <a href="#" slot="activate">Launch improv</a>
     </improv-wifi-launch-button>
-    <p>Hide if unsupported:</p>
-    <improv-wifi-launch-button hide-if-unsupported></improv-wifi-launch-button>
+    <p>Custom message if unsupported:</p>
+    <improv-wifi-launch-button hide-if-unsupported
+      ><span slot="unsupported"
+        >⚠️ Browser set-up not supported</span
+      ></improv-wifi-launch-button
+    >
     <script src="./dist/web/launch-button.js" type="module"></script>
   </body>
 </html>
