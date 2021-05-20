@@ -1,10 +1,6 @@
 class LaunchButton extends HTMLElement {
   public static isSupported = "bluetooth" in navigator;
 
-  static get observedAttributes() {
-    return ["hide-if-unsupported"];
-  }
-
   private renderRoot?: ShadowRoot;
 
   public connectedCallback() {
