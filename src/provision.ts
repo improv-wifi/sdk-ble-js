@@ -1,8 +1,6 @@
 import { IMPROV_BLE_SERVICE } from "./const";
 import "./provision-dialog";
 
-const DEBUG = true;
-
 export const startProvisioning = async () => {
   let device: BluetoothDevice | undefined;
   try {
@@ -10,34 +8,7 @@ export const startProvisioning = async () => {
       filters: [{ services: [IMPROV_BLE_SERVICE] }],
     });
   } catch (err) {
-    if (!DEBUG) {
-      return;
-    }
-  }
-
-  if (DEBUG && !device) {
-    device = {
-      gatt: {
-        connected: true,
-        disconnect() {},
-        async getPrimaryService() {
-          return {
-            async getCharacteristic() {
-              return {
-                startNotifications() {},
-                addEventListener() {},
-                stopNotifications() {},
-                writeValueWithoutResponse() {},
-                readValue() {},
-              };
-            },
-          };
-        },
-      },
-      addEventListener() {},
-      watchAdvertisements() {},
-      unwatchAdvertisements() {},
-    } as any as BluetoothDevice;
+    console.error("Failed to get device", err);
   }
 
   if (!device) {
