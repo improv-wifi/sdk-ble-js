@@ -189,18 +189,14 @@ class ProvisionDialog extends LitElement {
 
   protected firstUpdated(changedProps: PropertyValues) {
     super.firstUpdated(changedProps);
-
     this.device.addEventListener("gattserverdisconnected", () => {
       this._state = "disconnected";
     });
+    this._connect();
   }
 
   protected updated(changedProps: PropertyValues) {
     super.updated(changedProps);
-
-    if (!this.device.gatt!.connected) {
-      this._connect();
-    }
 
     if (
       (changedProps.has("_improvCurrentState") || changedProps.has("_state")) &&
@@ -294,7 +290,6 @@ class ProvisionDialog extends LitElement {
   private _rpcWriteSettings() {
     const encoder = new TextEncoder();
     const ssidEncoded = encoder.encode(this._inputSSID.value);
-    console.log({ ssid: this._inputSSID.value, pw: this._inputPassword.value });
     const pwEncoded = encoder.encode(this._inputPassword.value);
     const data = new Uint8Array([
       ssidEncoded.length,
