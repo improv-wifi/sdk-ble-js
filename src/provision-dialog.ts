@@ -6,6 +6,7 @@ import "@material/mwc-button";
 import "@material/mwc-circular-progress";
 import type { TextField } from "@material/mwc-textfield";
 import {
+  hasIdentifyCapability,
   ImprovCurrentState,
   ImprovErrorState,
   ImprovRPCCommand,
@@ -17,6 +18,7 @@ import {
 
 const ERROR_ICON = "⚠️";
 const OK_ICON = "🎉";
+const AUTHORIZE_ICON = "👉";
 const DEBUG = false;
 
 @customElement("improv-wifi-provision-dialog")
@@ -31,6 +33,7 @@ class ProvisionDialog extends LitElement {
 
   @state() private _improvCurrentState?: ImprovCurrentState | undefined;
   @state() private _improvErrorState = ImprovErrorState.NO_ERROR;
+  @state() private _improvCapabilities = 0;
 
   @state() private _busy = false;
 
@@ -52,31 +55,39 @@ class ProvisionDialog extends LitElement {
       content = this._renderProgress("Connecting");
       hideActions = true;
     } else if (this._state === "disconnected") {
-      content = this._renderEndMessage(ERROR_ICON, "Device disconnected");
+      content = this._renderMessage(ERROR_ICON, "Device disconnected", true);
     } else if (this._state === "error") {
-      content = this._renderEndMessage(
+      content = this._renderMessage(
         ERROR_ICON,
-        `An error occurred. ${this._error}`
+        `An error occurred. ${this._error}`,
+        true
       );
-    } else if (this._improvCurrentState === ImprovCurrentState.AVAILABLE) {
-      content = this._renderImprovAwaitingActivation();
-    } else if (this._improvCurrentState === ImprovCurrentState.ACTIVATED) {
+    } else if (
+      this._improvCurrentState === ImprovCurrentState.AUTHORIZATION_REQUIRED
+    ) {
+      content = this._renderMessage(
+        AUTHORIZE_ICON,
+        "Press the authorize button on the device",
+        false
+      );
+    } else if (this._improvCurrentState === ImprovCurrentState.AUTHORIZED) {
       if (this._busy) {
         content = this._renderProgress("Provisioning");
         hideActions = true;
       } else {
         heading = "Configure Wi-Fi";
-        content = this._renderImprovActivated();
+        content = this._renderImprovAuthorized();
       }
     } else if (this._improvCurrentState === ImprovCurrentState.PROVISIONING) {
       content = this._renderProgress("Provisioning");
       hideActions = true;
     } else if (this._improvCurrentState === ImprovCurrentState.PROVISIONED) {
-      content = this._renderEndMessage(OK_ICON, "Provisioning done!");
+      content = this._renderMessage(OK_ICON, "Provisioning done!", true);
     } else {
-      content = this._renderEndMessage(
+      content = this._renderMessage(
         ERROR_ICON,
-        `Unexpected state: ${this._state} - ${this._improvCurrentState}`
+        `Unexpected state: ${this._state} - ${this._improvCurrentState}`,
+        true
       );
     }
 
@@ -107,25 +118,24 @@ class ProvisionDialog extends LitElement {
     `;
   }
 
-  _renderEndMessage(icon: string, label: string) {
+  _renderMessage(icon: string, label: string, showClose: boolean) {
     return html`
       <div class="center">
         <div class="icon">${icon}</div>
         ${label}
       </div>
-      <mwc-button
-        slot="primaryAction"
-        dialogAction="ok"
-        label="Close"
-      ></mwc-button>
+      ${showClose &&
+      html`
+        <mwc-button
+          slot="primaryAction"
+          dialogAction="ok"
+          label="Close"
+        ></mwc-button>
+      `}
     `;
   }
 
-  _renderImprovAwaitingActivation() {
-    return html`Press the activate button on the device`;
-  }
-
-  _renderImprovActivated() {
+  private _renderImprovAuthorized() {
     let error: string | undefined;
 
     switch (this._improvErrorState) {
@@ -144,6 +154,13 @@ class ProvisionDialog extends LitElement {
       <div>
         Enter the Wi-Fi credentials of the network that you want
         ${this.device.name || "your device"} to connect to.
+        ${hasIdentifyCapability(this._improvCapabilities)
+          ? html`
+              <button class="link" @click=${this._rpcIdentify}>
+                Identify the device.
+              </button>
+            `
+          : ""}
       </div>
       ${error ? html`<p class="error">${error}</p>` : ""}
       <mwc-textfield
@@ -160,7 +177,7 @@ class ProvisionDialog extends LitElement {
       <mwc-button
         slot="primaryAction"
         label="Save"
-        @click=${this._writeSettings}
+        @click=${this._rpcWriteSettings}
       ></mwc-button>
       <mwc-button
         slot="secondaryAction"
@@ -168,10 +185,6 @@ class ProvisionDialog extends LitElement {
         label="Cancel"
       ></mwc-button>
     `;
-  }
-
-  _renderImprovProvisioned() {
-    return html`provisioned`;
   }
 
   protected firstUpdated(changedProps: PropertyValues) {
@@ -192,7 +205,7 @@ class ProvisionDialog extends LitElement {
     if (
       (changedProps.has("_improvCurrentState") || changedProps.has("_state")) &&
       this._state === "improv-state" &&
-      this._improvCurrentState === ImprovCurrentState.ACTIVATED
+      this._improvCurrentState === ImprovCurrentState.AUTHORIZED
     ) {
       const input = this._inputSSID;
       input.updateComplete.then(() => input.focus());
@@ -200,7 +213,7 @@ class ProvisionDialog extends LitElement {
   }
 
   private async _connect() {
-    // Some OSes do not support parallel GATT commands
+    // Do everything in sequence as some OSes do not support parallel GATT commands
     // https://github.com/WebBluetoothCG/web-bluetooth/issues/188#issuecomment-255121220
 
     try {
@@ -219,6 +232,17 @@ class ProvisionDialog extends LitElement {
       this._rpcChar = await service.getCharacteristic(
         IMPROV_BLE_RPC_CHARACTERISTIC
       );
+      try {
+        const capabilitiesChar = await service.getCharacteristic(
+          IMPROV_BLE_RPC_CHARACTERISTIC
+        );
+        const capabilitiesValue = await capabilitiesChar.readValue();
+        this._improvCapabilities = capabilitiesValue.getUint8(0);
+      } catch (err) {
+        console.warn(
+          "Firmware not according to spec, missing capability support."
+        );
+      }
 
       this._currentStateChar.startNotifications();
       this._currentStateChar.addEventListener(
@@ -263,7 +287,11 @@ class ProvisionDialog extends LitElement {
     }
   }
 
-  private async _writeSettings() {
+  private _rpcIdentify() {
+    this._sendRPC(ImprovRPCCommand.IDENTIFY, new Uint8Array(), false);
+  }
+
+  private _rpcWriteSettings() {
     const encoder = new TextEncoder();
     const ssidEncoded = encoder.encode(this._inputSSID.value);
     console.log({ ssid: this._inputSSID.value, pw: this._inputPassword.value });
@@ -274,12 +302,20 @@ class ProvisionDialog extends LitElement {
       pwEncoded.length,
       ...pwEncoded,
     ]);
-    this._sendRPC(ImprovRPCCommand.SEND_WIFI_SETTINGS, data);
+    this._sendRPC(ImprovRPCCommand.SEND_WIFI_SETTINGS, data, true);
   }
 
-  private _sendRPC(command: ImprovRPCCommand, data: Uint8Array) {
+  private _sendRPC(
+    command: ImprovRPCCommand,
+    data: Uint8Array,
+    receivedFeedback: boolean
+  ) {
     if (DEBUG) console.log("RPC COMMAND", command, data);
-    this._busy = true;
+    // Commands that receive feedback will finish when either
+    // the state changes or the error code becomes not 0.
+    if (receivedFeedback) {
+      this._busy = true;
+    }
     const payload = new Uint8Array([command, data.length, ...data, 0]);
     payload[payload.length - 1] = payload.reduce((sum, cur) => sum + cur, 0);
     this._rpcChar!.writeValueWithoutResponse(payload);
@@ -287,7 +323,7 @@ class ProvisionDialog extends LitElement {
 
   private _handleKeyDown(ev: KeyboardEvent) {
     if (ev.key == "enter") {
-      this._writeSettings();
+      this._rpcWriteSettings();
     }
   }
 
@@ -323,6 +359,16 @@ class ProvisionDialog extends LitElement {
     }
     .error {
       color: #db4437;
+    }
+    button.link {
+      background: none;
+      color: inherit;
+      border: none;
+      padding: 0;
+      font: inherit;
+      text-align: left;
+      text-decoration: underline;
+      cursor: pointer;
     }
   `;
 }
