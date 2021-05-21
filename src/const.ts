@@ -20,7 +20,7 @@ export enum ImprovErrorState {
   INVALID_RPC_PACKET = 0x01,
   UNKNOWN_RPC_COMMAND = 0x02,
   UNABLE_TO_CONNECT = 0x03,
-  NOT_ACTIVATED = 0x04,
+  NOT_AUTHORIZED = 0x04,
   UNKNOWN_ERROR = 0xff,
 }
 
