@@ -1,12 +1,15 @@
 export const IMPROV_BLE_SERVICE = "00467768-6228-2272-4663-277478268000";
-export const IMPROV_BLE_CAPABILITIES_CHARACTERISTIC =
-  "00467768-6228-2272-4663-277478268005";
 export const IMPROV_BLE_CURRENT_STATE_CHARACTERISTIC =
   "00467768-6228-2272-4663-277478268001";
 export const IMPROV_BLE_ERROR_STATE_CHARACTERISTIC =
   "00467768-6228-2272-4663-277478268002";
-export const IMPROV_BLE_RPC_CHARACTERISTIC =
+export const IMPROV_BLE_RPC_COMMAND_CHARACTERISTIC =
   "00467768-6228-2272-4663-277478268003";
+// <command ID><total length><length of string 1><string 1>[<string 2 length≥, <string 2>]<CS>
+export const IMPROV_BLE_RPC_RESULT_CHARACTERISTIC =
+  "00467768-6228-2272-4663-277478268004";
+export const IMPROV_BLE_CAPABILITIES_CHARACTERISTIC =
+  "00467768-6228-2272-4663-277478268005";
 
 export enum ImprovCurrentState {
   AUTHORIZATION_REQUIRED = 0x01,
@@ -27,6 +30,11 @@ export enum ImprovErrorState {
 export enum ImprovRPCCommand {
   SEND_WIFI_SETTINGS = 0x01,
   IDENTIFY = 0x02,
+}
+
+export interface ImprovRPCResult {
+  command: ImprovRPCCommand;
+  values: string[];
 }
 
 export const hasIdentifyCapability = (capabilities: number) =>

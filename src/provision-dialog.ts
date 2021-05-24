@@ -12,8 +12,10 @@ import {
   ImprovRPCCommand,
   IMPROV_BLE_CURRENT_STATE_CHARACTERISTIC,
   IMPROV_BLE_ERROR_STATE_CHARACTERISTIC,
-  IMPROV_BLE_RPC_CHARACTERISTIC,
+  IMPROV_BLE_RPC_COMMAND_CHARACTERISTIC,
+  IMPROV_BLE_RPC_RESULT_CHARACTERISTIC,
   IMPROV_BLE_SERVICE,
+  ImprovRPCResult,
 } from "./const";
 
 const ERROR_ICON = "⚠️";
@@ -33,6 +35,7 @@ class ProvisionDialog extends LitElement {
 
   @state() private _improvCurrentState?: ImprovCurrentState | undefined;
   @state() private _improvErrorState = ImprovErrorState.NO_ERROR;
+  @state() private _improvRPCResult?: ImprovRPCResult;
   @state() private _improvCapabilities = 0;
 
   @state() private _busy = false;
@@ -41,7 +44,8 @@ class ProvisionDialog extends LitElement {
 
   private _currentStateChar?: BluetoothRemoteGATTCharacteristic;
   private _errorStateChar?: BluetoothRemoteGATTCharacteristic;
-  private _rpcChar?: BluetoothRemoteGATTCharacteristic;
+  private _rpcCommandChar?: BluetoothRemoteGATTCharacteristic;
+  private _rpcResultChar?: BluetoothRemoteGATTCharacteristic;
 
   @query("mwc-textfield[name=ssid]") private _inputSSID!: TextField;
   @query("mwc-textfield[name=password]") private _inputPassword!: TextField;
@@ -82,7 +86,7 @@ class ProvisionDialog extends LitElement {
       content = this._renderProgress("Provisioning");
       hideActions = true;
     } else if (this._improvCurrentState === ImprovCurrentState.PROVISIONED) {
-      content = this._renderMessage(OK_ICON, "Provisioning done!", true);
+      content = this._renderImprovProvisioned();
     } else {
       content = this._renderMessage(
         ERROR_ICON,
@@ -187,6 +191,49 @@ class ProvisionDialog extends LitElement {
     `;
   }
 
+  private _renderImprovProvisioned() {
+    if (this._busy) {
+      return this._renderProgress("");
+    }
+
+    let redirectUrl: string | undefined;
+
+    if (
+      this._improvRPCResult &&
+      this._improvRPCResult.command === ImprovRPCCommand.SEND_WIFI_SETTINGS &&
+      this._improvRPCResult.values.length > 0
+    ) {
+      redirectUrl = this._improvRPCResult.values[0];
+    }
+
+    return html`
+      <div class="center">
+        <div class="icon">${OK_ICON}</div>
+        Provisioned!
+      </div>
+      ${redirectUrl === undefined
+        ? html`
+            <mwc-button
+              slot="primaryAction"
+              dialogAction="ok"
+              label="Close"
+            ></mwc-button>
+          `
+        : html`
+            <a
+              href=${redirectUrl}
+              slot="primaryAction"
+              class="has-button"
+              @click=${() => {
+                this._busy = true;
+              }}
+            >
+              <mwc-button label="Next"></mwc-button>
+            </a>
+          `}
+    `;
+  }
+
   protected firstUpdated(changedProps: PropertyValues) {
     super.firstUpdated(changedProps);
     this.device.addEventListener("gattserverdisconnected", () => {
@@ -225,12 +272,15 @@ class ProvisionDialog extends LitElement {
       this._errorStateChar = await service.getCharacteristic(
         IMPROV_BLE_ERROR_STATE_CHARACTERISTIC
       );
-      this._rpcChar = await service.getCharacteristic(
-        IMPROV_BLE_RPC_CHARACTERISTIC
+      this._rpcCommandChar = await service.getCharacteristic(
+        IMPROV_BLE_RPC_COMMAND_CHARACTERISTIC
+      );
+      this._rpcResultChar = await service.getCharacteristic(
+        IMPROV_BLE_RPC_RESULT_CHARACTERISTIC
       );
       try {
         const capabilitiesChar = await service.getCharacteristic(
-          IMPROV_BLE_RPC_CHARACTERISTIC
+          IMPROV_BLE_RPC_COMMAND_CHARACTERISTIC
         );
         const capabilitiesValue = await capabilitiesChar.readValue();
         this._improvCapabilities = capabilitiesValue.getUint8(0);
@@ -250,6 +300,12 @@ class ProvisionDialog extends LitElement {
       this._errorStateChar.addEventListener(
         "characteristicvaluechanged",
         (ev: any) => this._handleImprovErrorStateChange(ev.target.value)
+      );
+
+      this._rpcResultChar.startNotifications();
+      this._rpcResultChar.addEventListener(
+        "characteristicvaluechanged",
+        (ev: any) => this._handleImprovRPCResultChange(ev.target.value)
       );
 
       const curState = await this._currentStateChar.readValue();
@@ -283,6 +339,33 @@ class ProvisionDialog extends LitElement {
     }
   }
 
+  private _handleImprovRPCResultChange(encodedResult: DataView) {
+    if (DEBUG) console.log("improv RPC result", encodedResult);
+
+    const command = encodedResult.getUint8(0) as ImprovRPCCommand;
+    const result: ImprovRPCResult = {
+      command,
+      values: [],
+    };
+    const dataLength = encodedResult.getUint8(1);
+
+    const baseOffset = 2;
+    const decoder = new TextDecoder();
+
+    for (let start = 0; start < dataLength; ) {
+      const valueLength = encodedResult.getUint8(baseOffset + start);
+      const valueBytes = new Uint8Array(valueLength);
+      const valueOffset = baseOffset + start + 1;
+      for (let i = 0; i < valueLength; i++) {
+        valueBytes[i] = encodedResult.getUint8(valueOffset + i);
+      }
+      result.values.push(decoder.decode(valueBytes));
+      start += valueLength;
+    }
+
+    this._improvRPCResult = result;
+  }
+
   private _rpcIdentify() {
     this._sendRPC(ImprovRPCCommand.IDENTIFY, new Uint8Array(), false);
   }
@@ -313,7 +396,8 @@ class ProvisionDialog extends LitElement {
     }
     const payload = new Uint8Array([command, data.length, ...data, 0]);
     payload[payload.length - 1] = payload.reduce((sum, cur) => sum + cur, 0);
-    this._rpcChar!.writeValueWithoutResponse(payload);
+    this._improvRPCResult = undefined;
+    this._rpcCommandChar!.writeValueWithoutResponse(payload);
   }
 
   private _handleKeyDown(ev: KeyboardEvent) {
@@ -346,6 +430,9 @@ class ProvisionDialog extends LitElement {
     }
     mwc-circular-progress {
       margin-bottom: 16px;
+    }
+    a.has-button {
+      text-decoration: none;
     }
     .icon {
       font-size: 50px;
