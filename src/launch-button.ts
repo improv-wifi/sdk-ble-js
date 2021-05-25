@@ -1,5 +1,7 @@
 class LaunchButton extends HTMLElement {
-  public static isSupported = "bluetooth" in navigator;
+  private static _browserSupported = navigator.userAgent.includes("Linux");
+  public static isSupported =
+    LaunchButton._browserSupported && "bluetooth" in navigator;
 
   private renderRoot?: ShadowRoot;
 
@@ -24,7 +26,11 @@ class LaunchButton extends HTMLElement {
 
     this.renderRoot.innerHTML = LaunchButton.isSupported
       ? "<slot name='activate'><button>Connect device to Wi-Fi</button></slot>"
-      : "<slot name='unsupported'>Your browser does not support bluetooth provisioning. Use Google Chrome or Microsoft Edge.</slot>";
+      : `<slot name='unsupported'>Your browser does not support bluetooth provisioning. ${
+          !LaunchButton._browserSupported
+            ? "Use Google Chrome or Microsoft Edge."
+            : ""
+        }</slot>`;
   }
 }
 
