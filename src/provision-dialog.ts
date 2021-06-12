@@ -16,6 +16,7 @@ import {
   IMPROV_BLE_RPC_RESULT_CHARACTERISTIC,
   IMPROV_BLE_SERVICE,
   ImprovRPCResult,
+  State,
 } from "./const";
 
 const ERROR_ICON = "⚠️";
@@ -27,8 +28,9 @@ const DEBUG = false;
 class ProvisionDialog extends LitElement {
   public device!: BluetoothDevice;
 
-  @state() private _state: "connecting" | "improv-state" | "error" =
-    "connecting";
+  public stateUpdateCallback!: (state: State) => void;
+
+  @state() private _state: State = "connecting";
 
   @state() private _improvCurrentState?: ImprovCurrentState | undefined;
   @state() private _improvErrorState = ImprovErrorState.NO_ERROR;
@@ -240,6 +242,10 @@ class ProvisionDialog extends LitElement {
 
   protected updated(changedProps: PropertyValues) {
     super.updated(changedProps);
+
+    if (changedProps.has("_state")) {
+      this.stateUpdateCallback(this._state);
+    }
 
     if (
       (changedProps.has("_improvCurrentState") || changedProps.has("_state")) &&
