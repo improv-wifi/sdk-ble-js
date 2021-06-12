@@ -1,4 +1,4 @@
-class LaunchButton extends HTMLElement {
+export class LaunchButton extends HTMLElement {
   public static isSupported = "bluetooth" in navigator;
 
   public static isAllowed = window.isSecureContext;
@@ -9,8 +9,8 @@ class LaunchButton extends HTMLElement {
     cursor: pointer;
     font-size: 14px;
     padding: 8px 28px;
-    color: var(--improv-button-text-color, #fff);
-    background-color: var(--improv-button-color, #03a9f4);
+    color: var(--improv-on-primary-color, #fff);
+    background-color: var(--improv-primary-color, #03a9f4);
     border: none;
     border-radius: 4px;
     box-shadow: 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12), 0 1px 5px 0 rgba(0,0,0,.2);

@@ -98,7 +98,7 @@ class ProvisionDialog extends LitElement {
     return html`
       <mwc-dialog
         open
-        heading=${heading}
+        .heading=${heading}
         scrimClickAction
         @closed=${this._handleClose}
         .hideActions=${hideActions}
@@ -406,7 +406,8 @@ class ProvisionDialog extends LitElement {
   static styles = css`
     :host {
       --mdc-dialog-max-width: 390px;
-      --mdc-theme-primary: #03a9f4;
+      --mdc-theme-primary: var(--improv-primary-color, #03a9f4);
+      --mdc-theme-on-primary: var(--improv-on-primary-color, #fff);
     }
     mwc-textfield {
       display: block;

@@ -11,14 +11,14 @@ export const IMPROV_BLE_RPC_RESULT_CHARACTERISTIC =
 export const IMPROV_BLE_CAPABILITIES_CHARACTERISTIC =
   "00467768-6228-2272-4663-277478268005";
 
-export enum ImprovCurrentState {
+export const enum ImprovCurrentState {
   AUTHORIZATION_REQUIRED = 0x01,
   AUTHORIZED = 0x02,
   PROVISIONING = 0x03,
   PROVISIONED = 0x04,
 }
 
-export enum ImprovErrorState {
+export const enum ImprovErrorState {
   NO_ERROR = 0x00,
   INVALID_RPC_PACKET = 0x01,
   UNKNOWN_RPC_COMMAND = 0x02,
@@ -27,7 +27,7 @@ export enum ImprovErrorState {
   UNKNOWN_ERROR = 0xff,
 }
 
-export enum ImprovRPCCommand {
+export const enum ImprovRPCCommand {
   SEND_WIFI_SETTINGS = 0x01,
   IDENTIFY = 0x02,
 }
