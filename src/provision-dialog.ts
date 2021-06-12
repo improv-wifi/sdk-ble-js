@@ -167,16 +167,11 @@ class ProvisionDialog extends LitElement {
           : ""}
       </div>
       ${error ? html`<p class="error">${error}</p>` : ""}
-      <mwc-textfield
-        label="Wi-Fi SSID"
-        name="ssid"
-        @keydown=${this._handleKeyDown}
-      ></mwc-textfield>
+      <mwc-textfield label="Wi-Fi SSID" name="ssid"></mwc-textfield>
       <mwc-textfield
         label="Wi-Fi password"
         name="password"
         type="password"
-        @keydown=${this._handleKeyDown}
       ></mwc-textfield>
       <mwc-button
         slot="primaryAction"
@@ -398,12 +393,6 @@ class ProvisionDialog extends LitElement {
     payload[payload.length - 1] = payload.reduce((sum, cur) => sum + cur, 0);
     this._improvRPCResult = undefined;
     this._rpcCommandChar!.writeValueWithoutResponse(payload);
-  }
-
-  private _handleKeyDown(ev: KeyboardEvent) {
-    if (ev.key == "enter") {
-      this._rpcWriteSettings();
-    }
   }
 
   private async _handleClose() {
