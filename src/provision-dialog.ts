@@ -251,11 +251,9 @@ class ProvisionDialog extends LitElement {
     ) {
       const state =
         this._state === "IMPROV-STATE"
-          ? this._improvCurrentState
-            ? (ImprovCurrentState[
-                this._improvCurrentState
-              ] as keyof typeof ImprovCurrentState)
-            : "UNKNOWN"
+          ? (ImprovCurrentState[
+              this._improvCurrentState!
+            ] as keyof typeof ImprovCurrentState) || "UNKNOWN"
           : this._state;
       this.stateUpdateCallback({ state });
     }
