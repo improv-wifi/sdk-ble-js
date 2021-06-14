@@ -31,7 +31,7 @@ class ProvisionDialog extends LitElement {
 
   public stateUpdateCallback!: (state: StateObject) => void;
 
-  @state() private _state: State = "connecting";
+  @state() private _state: State = "CONNECTING";
 
   @state() private _improvCurrentState?: ImprovCurrentState | undefined;
   @state() private _improvErrorState = ImprovErrorState.NO_ERROR;
@@ -59,10 +59,10 @@ class ProvisionDialog extends LitElement {
     let content;
     let hideActions = false;
 
-    if (this._state === "connecting") {
+    if (this._state === "CONNECTING") {
       content = this._renderProgress("Connecting");
       hideActions = true;
-    } else if (this._state === "error") {
+    } else if (this._state === "ERROR") {
       content = this._renderMessage(
         ERROR_ICON,
         `An error occurred. ${this._error}`,
@@ -230,12 +230,12 @@ class ProvisionDialog extends LitElement {
     this.device.addEventListener("gattserverdisconnected", () => {
       // If we're provisioned, we expect to be disconnected.
       if (
-        this._state === "improv-state" &&
+        this._state === "IMPROV-STATE" &&
         this._improvCurrentState === ImprovCurrentState.PROVISIONED
       ) {
         return;
       }
-      this._state = "error";
+      this._state = "ERROR";
       this._error = "Device disconnected.";
     });
     this._connect();
@@ -246,27 +246,12 @@ class ProvisionDialog extends LitElement {
 
     if (
       changedProps.has("_state") ||
-      (this._state !== "improv-state" &&
+      (this._state !== "IMPROV-STATE" &&
         changedProps.has("_improvCurrentState"))
     ) {
       let state: StateObject["state"];
-      if (this._state === "improv-state") {
-        switch (this._improvCurrentState) {
-          case ImprovCurrentState.AUTHORIZATION_REQUIRED:
-            state = "authorization_required";
-            break;
-          case ImprovCurrentState.AUTHORIZED:
-            state = "authorized";
-            break;
-          case ImprovCurrentState.PROVISIONING:
-            state = "provisioning";
-            break;
-          case ImprovCurrentState.PROVISIONED:
-            state = "provisioned";
-            break;
-          default:
-            state = "unknown";
-        }
+      if (this._state === "IMPROV-STATE") {
+        state = ImprovCurrentState[this._improvCurrentState!];
       } else {
         state = this._state;
       }
@@ -275,7 +260,7 @@ class ProvisionDialog extends LitElement {
 
     if (
       (changedProps.has("_improvCurrentState") || changedProps.has("_state")) &&
-      this._state === "improv-state" &&
+      this._state === "IMPROV-STATE" &&
       this._improvCurrentState === ImprovCurrentState.AUTHORIZED
     ) {
       const input = this._inputSSID;
@@ -341,9 +326,9 @@ class ProvisionDialog extends LitElement {
 
       this._handleImprovCurrentStateChange(curState);
       this._handleImprovErrorStateChange(errorState);
-      this._state = "improv-state";
+      this._state = "IMPROV-STATE";
     } catch (err) {
-      this._state = "error";
+      this._state = "ERROR";
       this._error = `Unable to establish a connection: ${err}`;
     }
   }

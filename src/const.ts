@@ -11,19 +11,15 @@ export const IMPROV_BLE_RPC_RESULT_CHARACTERISTIC =
 export const IMPROV_BLE_CAPABILITIES_CHARACTERISTIC =
   "00467768-6228-2272-4663-277478268005";
 
-export type State = "connecting" | "improv-state" | "error";
+export type State = "CONNECTING" | "IMPROV-STATE" | "ERROR";
 
-export type ImprovState =
-  | "authorization_required"
-  | "authorized"
-  | "provisioning"
-  | "provisioned";
+export type ImprovState = keyof typeof ImprovCurrentState;
 
 export interface StateObject {
-  state: State | ImprovState | "unknown";
+  state: State | ImprovState | "UNKNOWN";
 }
 
-export const enum ImprovCurrentState {
+export enum ImprovCurrentState {
   AUTHORIZATION_REQUIRED = 0x01,
   AUTHORIZED = 0x02,
   PROVISIONING = 0x03,
