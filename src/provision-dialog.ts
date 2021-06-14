@@ -1,4 +1,4 @@
-import { LitElement, html, PropertyValues, css } from "lit";
+import { LitElement, html, PropertyValues, css, TemplateResult } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import "@material/mwc-dialog";
 import "@material/mwc-textfield";
@@ -55,8 +55,8 @@ class ProvisionDialog extends LitElement {
   @query("mwc-textfield[name=password]") private _inputPassword!: TextField;
 
   protected render() {
-    let heading;
-    let content;
+    let heading: string = "";
+    let content: TemplateResult;
     let hideActions = false;
 
     if (this._state === "CONNECTING") {
@@ -244,16 +244,20 @@ class ProvisionDialog extends LitElement {
   protected updated(changedProps: PropertyValues) {
     super.updated(changedProps);
 
+    console.log(this._state, this._improvCurrentState);
+
     if (
       changedProps.has("_state") ||
-      (this._state !== "IMPROV-STATE" &&
+      (this._state === "IMPROV-STATE" &&
         changedProps.has("_improvCurrentState"))
     ) {
       const state =
-        this._state === "IMPROV-STATE" && this._improvCurrentState
-          ? (ImprovCurrentState[
-              this._improvCurrentState
-            ] as keyof typeof ImprovCurrentState)
+        this._state === "IMPROV-STATE"
+          ? this._improvCurrentState
+            ? (ImprovCurrentState[
+                this._improvCurrentState
+              ] as keyof typeof ImprovCurrentState)
+            : "UNKNOWN"
           : this._state;
       this.stateUpdateCallback({ state });
     }

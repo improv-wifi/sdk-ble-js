@@ -14,7 +14,7 @@ export const IMPROV_BLE_CAPABILITIES_CHARACTERISTIC =
 export type State = "CONNECTING" | "IMPROV-STATE" | "ERROR";
 
 export interface ImprovState {
-  state: State | keyof typeof ImprovCurrentState;
+  state: State | keyof typeof ImprovCurrentState | "UNKNOWN";
 }
 
 export enum ImprovCurrentState {
