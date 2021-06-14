@@ -1,6 +1,6 @@
 {
   "name": "improv-wifi-sdk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Improv Wi-Fi SDK for the browser",
   "main": "dist/launch-button.js",
   "repository": "https://github.com/improv-wifi/sdk-js",
