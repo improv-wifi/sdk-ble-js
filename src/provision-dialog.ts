@@ -21,7 +21,7 @@ import {
 const ERROR_ICON = "⚠️";
 const OK_ICON = "🎉";
 const AUTHORIZE_ICON = "👉";
-const DEBUG = true;
+const DEBUG = false;
 
 @customElement("improv-wifi-provision-dialog")
 class ProvisionDialog extends LitElement {
