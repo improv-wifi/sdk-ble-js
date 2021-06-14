@@ -13,10 +13,8 @@ export const IMPROV_BLE_CAPABILITIES_CHARACTERISTIC =
 
 export type State = "CONNECTING" | "IMPROV-STATE" | "ERROR";
 
-export type ImprovState = keyof typeof ImprovCurrentState;
-
-export interface StateObject {
-  state: State | ImprovState | "UNKNOWN";
+export interface ImprovState {
+  state: State | keyof typeof ImprovCurrentState;
 }
 
 export enum ImprovCurrentState {
@@ -50,6 +48,6 @@ export const hasIdentifyCapability = (capabilities: number) =>
 
 declare global {
   interface HTMLElementEventMap {
-    "state-changed": CustomEvent<StateObject>;
+    "state-changed": CustomEvent<ImprovState>;
   }
 }

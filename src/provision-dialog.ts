@@ -17,7 +17,7 @@ import {
   IMPROV_BLE_SERVICE,
   ImprovRPCResult,
   State,
-  StateObject,
+  ImprovState,
 } from "./const";
 
 const ERROR_ICON = "⚠️";
@@ -29,7 +29,7 @@ const DEBUG = false;
 class ProvisionDialog extends LitElement {
   public device!: BluetoothDevice;
 
-  public stateUpdateCallback!: (state: StateObject) => void;
+  public stateUpdateCallback!: (state: ImprovState) => void;
 
   @state() private _state: State = "CONNECTING";
 
@@ -249,12 +249,12 @@ class ProvisionDialog extends LitElement {
       (this._state !== "IMPROV-STATE" &&
         changedProps.has("_improvCurrentState"))
     ) {
-      let state: StateObject["state"];
-      if (this._state === "IMPROV-STATE") {
-        state = ImprovCurrentState[this._improvCurrentState!];
-      } else {
-        state = this._state;
-      }
+      const state =
+        this._state === "IMPROV-STATE" && this._improvCurrentState
+          ? (ImprovCurrentState[
+              this._improvCurrentState
+            ] as keyof typeof ImprovCurrentState)
+          : this._state;
       this.stateUpdateCallback({ state });
     }
 
