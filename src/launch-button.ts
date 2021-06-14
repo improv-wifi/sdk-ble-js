@@ -75,7 +75,7 @@ export class LaunchButton extends HTMLElement {
     slot.addEventListener("click", async (ev) => {
       ev.preventDefault();
       const mod = await import("./provision");
-      mod.startProvisioning();
+      mod.startProvisioning(this);
     });
 
     if (

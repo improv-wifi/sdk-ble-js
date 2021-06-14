@@ -11,7 +11,16 @@ export const IMPROV_BLE_RPC_RESULT_CHARACTERISTIC =
 export const IMPROV_BLE_CAPABILITIES_CHARACTERISTIC =
   "00467768-6228-2272-4663-277478268005";
 
-export const enum ImprovCurrentState {
+export type State = "CONNECTING" | "IMPROV-STATE" | "ERROR";
+
+export interface ImprovState {
+  state:
+    | Omit<State, "IMPROV-STATE">
+    | keyof typeof ImprovCurrentState
+    | "UNKNOWN";
+}
+
+export enum ImprovCurrentState {
   AUTHORIZATION_REQUIRED = 0x01,
   AUTHORIZED = 0x02,
   PROVISIONING = 0x03,
@@ -39,3 +48,9 @@ export interface ImprovRPCResult {
 
 export const hasIdentifyCapability = (capabilities: number) =>
   (capabilities & 1) === 1;
+
+declare global {
+  interface HTMLElementEventMap {
+    "state-changed": CustomEvent<ImprovState>;
+  }
+}
