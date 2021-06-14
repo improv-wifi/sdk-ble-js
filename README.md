@@ -50,6 +50,16 @@ It is possible to customize the button and the message. You do this by putting y
 </improv-wifi-launch-button>
 ```
 
+## Events
+
+When the state of provisioning changes, a `state-changed` event is fired.
+
+A `state-changed` event contains the following information:
+
+Field | Description
+-- | --
+state | The current state ("CONNECTING" | "AUTHORIZATION_REQUIRED" | "AUTHORIZED" | "PROVISIONING" | "PROVISIONED" | "ERROR" | "UNKNOWN")
+
 ## Browser Support
 
 This SDK requires a browser with support for WebBluetooth. Currently this is supported by Google Chrome, Microsoft Edge and other browsers based on the Blink engine.
