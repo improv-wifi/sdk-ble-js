@@ -27,11 +27,8 @@ const DEBUG = false;
 class ProvisionDialog extends LitElement {
   public device!: BluetoothDevice;
 
-  @state() private _state:
-    | "connecting"
-    | "improv-state"
-    | "disconnected"
-    | "error" = "connecting";
+  @state() private _state: "connecting" | "improv-state" | "error" =
+    "connecting";
 
   @state() private _improvCurrentState?: ImprovCurrentState | undefined;
   @state() private _improvErrorState = ImprovErrorState.NO_ERROR;
@@ -46,6 +43,10 @@ class ProvisionDialog extends LitElement {
   private _errorStateChar?: BluetoothRemoteGATTCharacteristic;
   private _rpcCommandChar?: BluetoothRemoteGATTCharacteristic;
   private _rpcResultChar?: BluetoothRemoteGATTCharacteristic;
+  private _rpcFeedback?: {
+    resolve: (value: ImprovRPCResult) => void;
+    reject: (err: ImprovErrorState) => void;
+  };
 
   @query("mwc-textfield[name=ssid]") private _inputSSID!: TextField;
   @query("mwc-textfield[name=password]") private _inputPassword!: TextField;
@@ -58,8 +59,6 @@ class ProvisionDialog extends LitElement {
     if (this._state === "connecting") {
       content = this._renderProgress("Connecting");
       hideActions = true;
-    } else if (this._state === "disconnected") {
-      content = this._renderMessage(ERROR_ICON, "Device disconnected", true);
     } else if (this._state === "error") {
       content = this._renderMessage(
         ERROR_ICON,
@@ -187,10 +186,6 @@ class ProvisionDialog extends LitElement {
   }
 
   private _renderImprovProvisioned() {
-    if (this._busy) {
-      return this._renderProgress("");
-    }
-
     let redirectUrl: string | undefined;
 
     if (
@@ -219,9 +214,7 @@ class ProvisionDialog extends LitElement {
               href=${redirectUrl}
               slot="primaryAction"
               class="has-button"
-              @click=${() => {
-                this._busy = true;
-              }}
+              dialogAction="ok"
             >
               <mwc-button label="Next"></mwc-button>
             </a>
@@ -232,7 +225,15 @@ class ProvisionDialog extends LitElement {
   protected firstUpdated(changedProps: PropertyValues) {
     super.firstUpdated(changedProps);
     this.device.addEventListener("gattserverdisconnected", () => {
-      this._state = "disconnected";
+      // If we're provisioned, we expect to be disconnected.
+      if (
+        this._state === "improv-state" &&
+        this._improvCurrentState === ImprovCurrentState.PROVISIONED
+      ) {
+        return;
+      }
+      this._state = "error";
+      this._error = "Device disconnected.";
     });
     this._connect();
   }
@@ -331,6 +332,10 @@ class ProvisionDialog extends LitElement {
     // If we get a real error it means the RPC command is done.
     if (state !== ImprovErrorState.NO_ERROR) {
       this._busy = false;
+      if (this._rpcFeedback) {
+        this._rpcFeedback.reject(state);
+        this._rpcFeedback = undefined;
+      }
     }
   }
 
@@ -359,13 +364,18 @@ class ProvisionDialog extends LitElement {
     }
 
     this._improvRPCResult = result;
+
+    if (this._rpcFeedback) {
+      this._rpcFeedback.resolve(result);
+      this._rpcFeedback = undefined;
+    }
   }
 
   private _rpcIdentify() {
     this._sendRPC(ImprovRPCCommand.IDENTIFY, new Uint8Array(), false);
   }
 
-  private _rpcWriteSettings() {
+  private async _rpcWriteSettings() {
     const encoder = new TextEncoder();
     const ssidEncoded = encoder.encode(this._inputSSID.value);
     const pwEncoded = encoder.encode(this._inputPassword.value);
@@ -375,24 +385,48 @@ class ProvisionDialog extends LitElement {
       pwEncoded.length,
       ...pwEncoded,
     ]);
-    this._sendRPC(ImprovRPCCommand.SEND_WIFI_SETTINGS, data, true);
+    try {
+      await this._sendRPC(ImprovRPCCommand.SEND_WIFI_SETTINGS, data, true);
+      if (DEBUG) console.log("Provisioned! Disconnecting gatt");
+      // We're going to set this result manually in case we get RPC result first
+      // that way it's safe to disconnect.
+      this._improvCurrentState = ImprovCurrentState.PROVISIONED;
+      this.device.gatt!.disconnect();
+    } catch (err) {
+      // Do nothing. Error code will handle itself.
+    }
   }
 
-  private _sendRPC(
+  private async _sendRPC(
     command: ImprovRPCCommand,
     data: Uint8Array,
-    receivedFeedback: boolean
-  ) {
+    // If set to true, the promise will return the RPC result.
+    requiresFeedback: boolean
+  ): Promise<ImprovRPCResult | undefined> {
     if (DEBUG) console.log("RPC COMMAND", command, data);
     // Commands that receive feedback will finish when either
     // the state changes or the error code becomes not 0.
-    if (receivedFeedback) {
+    if (requiresFeedback) {
+      if (this._rpcFeedback) {
+        throw new Error(
+          "Only 1 RPC command that requires feedback can be active"
+        );
+      }
       this._busy = true;
     }
     const payload = new Uint8Array([command, data.length, ...data, 0]);
     payload[payload.length - 1] = payload.reduce((sum, cur) => sum + cur, 0);
     this._improvRPCResult = undefined;
-    this._rpcCommandChar!.writeValueWithoutResponse(payload);
+
+    if (requiresFeedback) {
+      return await new Promise<ImprovRPCResult>((resolve, reject) => {
+        this._rpcFeedback = { resolve, reject };
+        this._rpcCommandChar!.writeValueWithoutResponse(payload);
+      });
+    } else {
+      this._rpcCommandChar!.writeValueWithoutResponse(payload);
+      return undefined;
+    }
   }
 
   private async _handleClose() {
