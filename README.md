@@ -30,6 +30,17 @@ Add the following to your website to show a button to start the provisioning pro
 
 A warning message will be rendered if the browser does not support WebBluetooth.
 
+### Attributes
+
+The following attributes are automatically added to `<improv-wifi-launch-button>` and can be used for styling:
+
+| Attribute | Description |
+| -- | -- |
+| `supported` | Added if this browser is supported
+| `unsupported` | Added if this browser is not supported
+
+### Slots
+
 It is possible to customize the button and the message. You do this by putting your elements inside the `<improv-wifi-launch-button>` element and adding the appropriate `slot` attribute. Use `activate` to replace the activation button and `unsupported` to replace the unsupported message:
 
 ```html
