@@ -244,8 +244,6 @@ class ProvisionDialog extends LitElement {
   protected updated(changedProps: PropertyValues) {
     super.updated(changedProps);
 
-    console.log(this._state, this._improvCurrentState);
-
     if (
       changedProps.has("_state") ||
       (this._state === "IMPROV-STATE" &&
