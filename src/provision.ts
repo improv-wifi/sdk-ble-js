@@ -1,4 +1,4 @@
-import { IMPROV_BLE_SERVICE, State } from "./const";
+import { IMPROV_BLE_SERVICE, StateObject } from "./const";
 import { LaunchButton } from "./launch-button";
 import "./provision-dialog";
 import { fireEvent } from "./util";
@@ -19,8 +19,8 @@ export const startProvisioning = async (button: LaunchButton) => {
 
   const el = document.createElement("improv-wifi-provision-dialog");
   el.device = device;
-  el.stateUpdateCallback = (state: State) => {
-    fireEvent(button, "state-changed", { state });
+  el.stateUpdateCallback = (state: StateObject) => {
+    fireEvent(button, "state-changed", state);
   };
   document.body.appendChild(el);
 };

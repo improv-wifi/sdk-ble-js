@@ -13,6 +13,16 @@
     <improv-wifi-launch-button>
       <span slot="unsupported">⚠️ Browser set-up not supported</span>
     </improv-wifi-launch-button>
+    <p>Events:</p>
+    <pre id="events"></pre>
     <script src="./dist/web/launch-button.js" type="module"></script>
+    <script>
+      document.querySelectorAll("improv-wifi-launch-button").forEach((button) =>
+        button.addEventListener("state-changed", (ev) => {
+          document.querySelector("pre").innerText +=
+            JSON.stringify(ev.detail) + "\n";
+        })
+      );
+    </script>
   </body>
 </html>

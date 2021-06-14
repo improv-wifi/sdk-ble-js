@@ -11,10 +11,16 @@ export const IMPROV_BLE_RPC_RESULT_CHARACTERISTIC =
 export const IMPROV_BLE_CAPABILITIES_CHARACTERISTIC =
   "00467768-6228-2272-4663-277478268005";
 
-export type State = "connecting" | "improv-state" | "disconnected" | "error";
+export type State = "connecting" | "improv-state" | "error";
 
-export interface ImprovState {
-  state: State;
+export type ImprovState =
+  | "authorization_required"
+  | "authorized"
+  | "provisioning"
+  | "provisioned";
+
+export interface StateObject {
+  state: State | ImprovState | "unknown";
 }
 
 export const enum ImprovCurrentState {
@@ -48,6 +54,6 @@ export const hasIdentifyCapability = (capabilities: number) =>
 
 declare global {
   interface HTMLElementEventMap {
-    "state-changed": CustomEvent<ImprovState>;
+    "state-changed": CustomEvent<StateObject>;
   }
 }

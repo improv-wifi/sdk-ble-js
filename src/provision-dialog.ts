@@ -17,6 +17,7 @@ import {
   IMPROV_BLE_SERVICE,
   ImprovRPCResult,
   State,
+  StateObject,
 } from "./const";
 
 const ERROR_ICON = "⚠️";
@@ -28,7 +29,7 @@ const DEBUG = false;
 class ProvisionDialog extends LitElement {
   public device!: BluetoothDevice;
 
-  public stateUpdateCallback!: (state: State) => void;
+  public stateUpdateCallback!: (state: StateObject) => void;
 
   @state() private _state: State = "connecting";
 
@@ -243,8 +244,33 @@ class ProvisionDialog extends LitElement {
   protected updated(changedProps: PropertyValues) {
     super.updated(changedProps);
 
-    if (changedProps.has("_state")) {
-      this.stateUpdateCallback(this._state);
+    if (
+      changedProps.has("_state") ||
+      (this._state !== "improv-state" &&
+        changedProps.has("_improvCurrentState"))
+    ) {
+      let state: StateObject["state"];
+      if (this._state === "improv-state") {
+        switch (this._improvCurrentState) {
+          case ImprovCurrentState.AUTHORIZATION_REQUIRED:
+            state = "authorization_required";
+            break;
+          case ImprovCurrentState.AUTHORIZED:
+            state = "authorized";
+            break;
+          case ImprovCurrentState.PROVISIONING:
+            state = "provisioning";
+            break;
+          case ImprovCurrentState.PROVISIONED:
+            state = "provisioned";
+            break;
+          default:
+            state = "unknown";
+        }
+      } else {
+        state = this._state;
+      }
+      this.stateUpdateCallback({ state });
     }
 
     if (
