@@ -58,7 +58,7 @@ A `state-changed` event contains the following information:
 
 Field | Description
 -- | --
-state | The current state ("CONNECTING" | "AUTHORIZATION_REQUIRED" | "AUTHORIZED" | "PROVISIONING" | "PROVISIONED" | "ERROR" | "UNKNOWN")
+state | The current state (`CONNECTING`, `AUTHORIZATION_REQUIRED`, `AUTHORIZED`, `PROVISIONING`, `PROVISIONED`, `ERROR`, `UNKNOWN`)
 
 ## Browser Support
 
