@@ -53,9 +53,9 @@ export class LaunchButton extends HTMLElement {
 
     if (!LaunchButton.isSupported || !LaunchButton.isAllowed) {
       this.toggleAttribute("not-supported", true);
-      this.renderRoot.innerHTML = !LaunchButton.isSupported
-        ? "<slot name='unsupported'>Your browser does not support bluetooth provisioning. Use Google Chrome or Microsoft Edge.</slot>"
-        : "<slot name='not-allowed'>You can only use Improv on HTTPS sites or localhost.</slot>";
+      this.renderRoot.innerHTML = !LaunchButton.isAllowed
+        ? "<slot name='not-allowed'>You can only use Improv on HTTPS sites or localhost.</slot>"
+        : "<slot name='unsupported'>Your browser does not support bluetooth provisioning. Use Google Chrome or Microsoft Edge.</slot>";
       return;
     }
 
