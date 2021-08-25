@@ -20,11 +20,11 @@
     "typescript": "^4.2.4"
   },
   "dependencies": {
-    "@material/mwc-button": "^0.21.0",
-    "@material/mwc-circular-progress": "^0.21.0",
-    "@material/mwc-dialog": "^0.21.0",
-    "@material/mwc-textfield": "^0.21.0",
-    "lit": "^2.0.0-rc.2",
-    "tslib": "^2.2.0"
+    "@material/mwc-button": "^0.22.1",
+    "@material/mwc-circular-progress": "^0.22.1",
+    "@material/mwc-dialog": "^0.22.1",
+    "@material/mwc-textfield": "^0.22.1",
+    "lit": "^2.0.0-rc.3",
+    "tslib": "^2.3.1"
   }
 }
