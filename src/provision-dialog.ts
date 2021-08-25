@@ -18,6 +18,7 @@ import {
   ImprovRPCResult,
   State,
   ImprovState,
+  IMPROV_BLE_CAPABILITIES_CHARACTERISTIC,
 } from "./const";
 
 const ERROR_ICON = "⚠️";
@@ -293,7 +294,7 @@ class ProvisionDialog extends LitElement {
       );
       try {
         const capabilitiesChar = await service.getCharacteristic(
-          IMPROV_BLE_RPC_COMMAND_CHARACTERISTIC
+          IMPROV_BLE_CAPABILITIES_CHARACTERISTIC
         );
         const capabilitiesValue = await capabilitiesChar.readValue();
         this._improvCapabilities = capabilitiesValue.getUint8(0);
