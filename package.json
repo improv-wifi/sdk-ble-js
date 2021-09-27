@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@material/mwc-button": "^0.22.1",
-    "@material/mwc-circular-progress": "^0.22.1",
+    "@material/mwc-circular-progress": "^0.25.1",
     "@material/mwc-dialog": "^0.22.1",
     "@material/mwc-textfield": "^0.22.1",
     "lit": "^2.0.0-rc.3",
