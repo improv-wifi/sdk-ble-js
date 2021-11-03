@@ -1,10 +1,10 @@
 import { LitElement, html, PropertyValues, css, TemplateResult } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
-import "@material/mwc-dialog";
-import "@material/mwc-textfield";
-import "@material/mwc-button";
-import "@material/mwc-circular-progress";
-import type { TextField } from "@material/mwc-textfield";
+import "./components/ib-dialog";
+import "./components/ib-textfield";
+import "./components/ib-button";
+import "./components/ib-circular-progress";
+import type { IbTextfield } from "./components/ib-textfield";
 import {
   hasIdentifyCapability,
   ImprovCurrentState,
@@ -34,8 +34,8 @@ class ProvisionDialog extends LitElement {
 
   private _error?: string;
 
-  @query("mwc-textfield[name=ssid]") private _inputSSID!: TextField;
-  @query("mwc-textfield[name=password]") private _inputPassword!: TextField;
+  @query("ib-textfield[name=ssid]") private _inputSSID!: IbTextfield;
+  @query("ib-textfield[name=password]") private _inputPassword!: IbTextfield;
 
   protected render() {
     let heading: string = "";
@@ -81,13 +81,13 @@ class ProvisionDialog extends LitElement {
     }
 
     return html`
-      <mwc-dialog
+      <ib-dialog
         open
         .heading=${heading}
         scrimClickAction
         @closed=${this._handleClose}
         .hideActions=${hideActions}
-        >${content}</mwc-dialog
+        >${content}</ib-dialog
       >
     `;
   }
@@ -96,11 +96,11 @@ class ProvisionDialog extends LitElement {
     return html`
       <div class="center">
         <div>
-          <mwc-circular-progress
+          <ib-circular-progress
             active
             indeterminate
             density="8"
-          ></mwc-circular-progress>
+          ></ib-circular-progress>
         </div>
         ${label}
       </div>
@@ -115,11 +115,11 @@ class ProvisionDialog extends LitElement {
       </div>
       ${showClose &&
       html`
-        <mwc-button
+        <ib-button
           slot="primaryAction"
           dialogAction="ok"
           label="Close"
-        ></mwc-button>
+        ></ib-button>
       `}
     `;
   }
@@ -152,22 +152,22 @@ class ProvisionDialog extends LitElement {
           : ""}
       </div>
       ${error ? html`<p class="error">${error}</p>` : ""}
-      <mwc-textfield label="Wi-Fi SSID" name="ssid"></mwc-textfield>
-      <mwc-textfield
+      <ib-textfield label="Wi-Fi SSID" name="ssid"></ib-textfield>
+      <ib-textfield
         label="Wi-Fi password"
         name="password"
         type="password"
-      ></mwc-textfield>
-      <mwc-button
+      ></ib-textfield>
+      <ib-button
         slot="primaryAction"
         label="Save"
         @click=${this._provision}
-      ></mwc-button>
-      <mwc-button
+      ></ib-button>
+      <ib-button
         slot="secondaryAction"
         dialogAction="close"
         label="Cancel"
-      ></mwc-button>
+      ></ib-button>
     `;
   }
 
@@ -179,11 +179,11 @@ class ProvisionDialog extends LitElement {
       </div>
       ${this.client.nextUrl === undefined
         ? html`
-            <mwc-button
+            <ib-button
               slot="primaryAction"
               dialogAction="ok"
               label="Close"
-            ></mwc-button>
+            ></ib-button>
           `
         : html`
             <a
@@ -192,7 +192,7 @@ class ProvisionDialog extends LitElement {
               class="has-button"
               dialogAction="ok"
             >
-              <mwc-button label="Next"></mwc-button>
+              <ib-button label="Next"></ib-button>
             </a>
           `}
     `;
@@ -297,16 +297,16 @@ class ProvisionDialog extends LitElement {
       --mdc-theme-primary: var(--improv-primary-color, #03a9f4);
       --mdc-theme-on-primary: var(--improv-on-primary-color, #fff);
     }
-    mwc-textfield {
+    ib-textfield {
       display: block;
     }
-    mwc-textfield {
+    ib-textfield {
       margin-top: 16px;
     }
     .center {
       text-align: center;
     }
-    mwc-circular-progress {
+    ib-circular-progress {
       margin-bottom: 16px;
     }
     a.has-button {
