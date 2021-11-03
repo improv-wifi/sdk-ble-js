@@ -9,26 +9,18 @@ import {
   hasIdentifyCapability,
   ImprovCurrentState,
   ImprovErrorState,
-  ImprovRPCCommand,
-  IMPROV_BLE_CURRENT_STATE_CHARACTERISTIC,
-  IMPROV_BLE_ERROR_STATE_CHARACTERISTIC,
-  IMPROV_BLE_RPC_COMMAND_CHARACTERISTIC,
-  IMPROV_BLE_RPC_RESULT_CHARACTERISTIC,
-  IMPROV_BLE_SERVICE,
-  ImprovRPCResult,
   State,
   ImprovState,
-  IMPROV_BLE_CAPABILITIES_CHARACTERISTIC,
 } from "./const";
+import { ImprovBluetoothLE } from "./ble";
 
 const ERROR_ICON = "⚠️";
 const OK_ICON = "🎉";
 const AUTHORIZE_ICON = "👉";
-const DEBUG = false;
 
 @customElement("improv-wifi-provision-dialog")
 class ProvisionDialog extends LitElement {
-  public device!: BluetoothDevice;
+  public client!: ImprovBluetoothLE;
 
   public stateUpdateCallback!: (state: ImprovState) => void;
 
@@ -36,21 +28,11 @@ class ProvisionDialog extends LitElement {
 
   @state() private _improvCurrentState?: ImprovCurrentState | undefined;
   @state() private _improvErrorState = ImprovErrorState.NO_ERROR;
-  @state() private _improvRPCResult?: ImprovRPCResult;
   @state() private _improvCapabilities = 0;
 
   @state() private _busy = false;
 
   private _error?: string;
-
-  private _currentStateChar?: BluetoothRemoteGATTCharacteristic;
-  private _errorStateChar?: BluetoothRemoteGATTCharacteristic;
-  private _rpcCommandChar?: BluetoothRemoteGATTCharacteristic;
-  private _rpcResultChar?: BluetoothRemoteGATTCharacteristic;
-  private _rpcFeedback?: {
-    resolve: (value: ImprovRPCResult) => void;
-    reject: (err: ImprovErrorState) => void;
-  };
 
   @query("mwc-textfield[name=ssid]") private _inputSSID!: TextField;
   @query("mwc-textfield[name=password]") private _inputPassword!: TextField;
@@ -160,10 +142,10 @@ class ProvisionDialog extends LitElement {
     return html`
       <div>
         Enter the Wi-Fi credentials of the network that you want
-        ${this.device.name || "your device"} to connect to.
+        ${this.client.name || "your device"} to connect to.
         ${hasIdentifyCapability(this._improvCapabilities)
           ? html`
-              <button class="link" @click=${this._rpcIdentify}>
+              <button class="link" @click=${this._identify}>
                 Identify the device.
               </button>
             `
@@ -179,7 +161,7 @@ class ProvisionDialog extends LitElement {
       <mwc-button
         slot="primaryAction"
         label="Save"
-        @click=${this._rpcWriteSettings}
+        @click=${this._provision}
       ></mwc-button>
       <mwc-button
         slot="secondaryAction"
@@ -190,22 +172,12 @@ class ProvisionDialog extends LitElement {
   }
 
   private _renderImprovProvisioned() {
-    let redirectUrl: string | undefined;
-
-    if (
-      this._improvRPCResult &&
-      this._improvRPCResult.command === ImprovRPCCommand.SEND_WIFI_SETTINGS &&
-      this._improvRPCResult.values.length > 0
-    ) {
-      redirectUrl = this._improvRPCResult.values[0];
-    }
-
     return html`
       <div class="center">
         <div class="icon">${OK_ICON}</div>
         Provisioned!
       </div>
-      ${redirectUrl === undefined
+      ${this.client.nextUrl === undefined
         ? html`
             <mwc-button
               slot="primaryAction"
@@ -215,7 +187,7 @@ class ProvisionDialog extends LitElement {
           `
         : html`
             <a
-              href=${redirectUrl}
+              href=${this.client.nextUrl}
               slot="primaryAction"
               class="has-button"
               dialogAction="ok"
@@ -228,7 +200,21 @@ class ProvisionDialog extends LitElement {
 
   protected firstUpdated(changedProps: PropertyValues) {
     super.firstUpdated(changedProps);
-    this.device.addEventListener("gattserverdisconnected", () => {
+    this.client.addEventListener("state-changed", () => {
+      this._state = "IMPROV-STATE";
+      this._busy = false;
+      this._improvCurrentState = this.client.currentState;
+    });
+    this.client.addEventListener("error-changed", () => {
+      this._improvErrorState = this.client.errorState;
+      // Sending an RPC command sets error to no error.
+      // If we get a real error it means the RPC command is done.
+
+      if (this._improvErrorState !== ImprovErrorState.NO_ERROR) {
+        this._busy = false;
+      }
+    });
+    this.client.addEventListener("disconnect", () => {
       // If we're provisioned, we expect to be disconnected.
       if (
         this._state === "IMPROV-STATE" &&
@@ -240,6 +226,37 @@ class ProvisionDialog extends LitElement {
       this._error = "Device disconnected.";
     });
     this._connect();
+  }
+
+  private async _connect() {
+    try {
+      await this.client.initialize();
+      this._improvCurrentState = this.client.currentState;
+      this._improvErrorState = this.client.errorState;
+      this._improvCapabilities = this.client.capabilities;
+      this._state = "IMPROV-STATE";
+    } catch (err: any) {
+      this._state = "ERROR";
+      this._error = err.message;
+    }
+  }
+
+  private async _provision() {
+    this._busy = true;
+    try {
+      await this.client.provision(
+        this._inputSSID.value,
+        this._inputPassword.value
+      );
+    } catch (err) {
+      // Ignore, error state takes care of this.
+    } finally {
+      this._busy = false;
+    }
+  }
+
+  private _identify() {
+    this.client.identify();
   }
 
   protected updated(changedProps: PropertyValues) {
@@ -269,189 +286,8 @@ class ProvisionDialog extends LitElement {
     }
   }
 
-  private async _connect() {
-    // Do everything in sequence as some OSes do not support parallel GATT commands
-    // https://github.com/WebBluetoothCG/web-bluetooth/issues/188#issuecomment-255121220
-
-    try {
-      await this.device.gatt!.connect();
-
-      const service = await this.device.gatt!.getPrimaryService(
-        IMPROV_BLE_SERVICE
-      );
-
-      this._currentStateChar = await service.getCharacteristic(
-        IMPROV_BLE_CURRENT_STATE_CHARACTERISTIC
-      );
-      this._errorStateChar = await service.getCharacteristic(
-        IMPROV_BLE_ERROR_STATE_CHARACTERISTIC
-      );
-      this._rpcCommandChar = await service.getCharacteristic(
-        IMPROV_BLE_RPC_COMMAND_CHARACTERISTIC
-      );
-      this._rpcResultChar = await service.getCharacteristic(
-        IMPROV_BLE_RPC_RESULT_CHARACTERISTIC
-      );
-      try {
-        const capabilitiesChar = await service.getCharacteristic(
-          IMPROV_BLE_CAPABILITIES_CHARACTERISTIC
-        );
-        const capabilitiesValue = await capabilitiesChar.readValue();
-        this._improvCapabilities = capabilitiesValue.getUint8(0);
-      } catch (err) {
-        console.warn(
-          "Firmware not according to spec, missing capability support."
-        );
-      }
-
-      this._currentStateChar.startNotifications();
-      this._currentStateChar.addEventListener(
-        "characteristicvaluechanged",
-        (ev: any) => this._handleImprovCurrentStateChange(ev.target.value)
-      );
-
-      this._errorStateChar.startNotifications();
-      this._errorStateChar.addEventListener(
-        "characteristicvaluechanged",
-        (ev: any) => this._handleImprovErrorStateChange(ev.target.value)
-      );
-
-      this._rpcResultChar.startNotifications();
-      this._rpcResultChar.addEventListener(
-        "characteristicvaluechanged",
-        (ev: any) => this._handleImprovRPCResultChange(ev.target.value)
-      );
-
-      const curState = await this._currentStateChar.readValue();
-      const errorState = await this._errorStateChar.readValue();
-
-      this._handleImprovCurrentStateChange(curState);
-      this._handleImprovErrorStateChange(errorState);
-      this._state = "IMPROV-STATE";
-    } catch (err) {
-      this._state = "ERROR";
-      this._error = `Unable to establish a connection: ${err}`;
-    }
-  }
-
-  private _handleImprovCurrentStateChange(encodedState: DataView) {
-    const state = encodedState.getUint8(0) as ImprovCurrentState;
-    if (DEBUG) console.log("improv current state", state);
-    this._improvCurrentState = state;
-    // If we receive a new state, it means the RPC command is done
-    this._busy = false;
-  }
-
-  private _handleImprovErrorStateChange(encodedState: DataView) {
-    const state = encodedState.getUint8(0) as ImprovErrorState;
-    if (DEBUG) console.log("improv error state", state);
-    this._improvErrorState = state;
-    // Sending an RPC command sets error to no error.
-    // If we get a real error it means the RPC command is done.
-    if (state !== ImprovErrorState.NO_ERROR) {
-      this._busy = false;
-      if (this._rpcFeedback) {
-        this._rpcFeedback.reject(state);
-        this._rpcFeedback = undefined;
-      }
-    }
-  }
-
-  private _handleImprovRPCResultChange(encodedResult: DataView) {
-    if (DEBUG) console.log("improv RPC result", encodedResult);
-
-    const command = encodedResult.getUint8(0) as ImprovRPCCommand;
-    const result: ImprovRPCResult = {
-      command,
-      values: [],
-    };
-    const dataLength = encodedResult.getUint8(1);
-
-    const baseOffset = 2;
-    const decoder = new TextDecoder();
-
-    for (let start = 0; start < dataLength; ) {
-      const valueLength = encodedResult.getUint8(baseOffset + start);
-      const valueBytes = new Uint8Array(valueLength);
-      const valueOffset = baseOffset + start + 1;
-      for (let i = 0; i < valueLength; i++) {
-        valueBytes[i] = encodedResult.getUint8(valueOffset + i);
-      }
-      result.values.push(decoder.decode(valueBytes));
-      start += valueLength;
-    }
-
-    this._improvRPCResult = result;
-
-    if (this._rpcFeedback) {
-      this._rpcFeedback.resolve(result);
-      this._rpcFeedback = undefined;
-    }
-  }
-
-  private _rpcIdentify() {
-    this._sendRPC(ImprovRPCCommand.IDENTIFY, new Uint8Array(), false);
-  }
-
-  private async _rpcWriteSettings() {
-    const encoder = new TextEncoder();
-    const ssidEncoded = encoder.encode(this._inputSSID.value);
-    const pwEncoded = encoder.encode(this._inputPassword.value);
-    const data = new Uint8Array([
-      ssidEncoded.length,
-      ...ssidEncoded,
-      pwEncoded.length,
-      ...pwEncoded,
-    ]);
-    try {
-      await this._sendRPC(ImprovRPCCommand.SEND_WIFI_SETTINGS, data, true);
-      if (DEBUG) console.log("Provisioned! Disconnecting gatt");
-      // We're going to set this result manually in case we get RPC result first
-      // that way it's safe to disconnect.
-      this._improvCurrentState = ImprovCurrentState.PROVISIONED;
-      this.device.gatt!.disconnect();
-    } catch (err) {
-      // Do nothing. Error code will handle itself.
-    }
-  }
-
-  private async _sendRPC(
-    command: ImprovRPCCommand,
-    data: Uint8Array,
-    // If set to true, the promise will return the RPC result.
-    requiresFeedback: boolean
-  ): Promise<ImprovRPCResult | undefined> {
-    if (DEBUG) console.log("RPC COMMAND", command, data);
-    // Commands that receive feedback will finish when either
-    // the state changes or the error code becomes not 0.
-    if (requiresFeedback) {
-      if (this._rpcFeedback) {
-        throw new Error(
-          "Only 1 RPC command that requires feedback can be active"
-        );
-      }
-      this._busy = true;
-    }
-    const payload = new Uint8Array([command, data.length, ...data, 0]);
-    payload[payload.length - 1] = payload.reduce((sum, cur) => sum + cur, 0);
-    this._improvRPCResult = undefined;
-
-    if (requiresFeedback) {
-      return await new Promise<ImprovRPCResult>((resolve, reject) => {
-        this._rpcFeedback = { resolve, reject };
-        this._rpcCommandChar!.writeValueWithoutResponse(payload);
-      });
-    } else {
-      this._rpcCommandChar!.writeValueWithoutResponse(payload);
-      return undefined;
-    }
-  }
-
-  private async _handleClose() {
-    if (this.device.gatt!.connected) {
-      if (DEBUG) console.log("Disconnecting gatt");
-      this.device.gatt!.disconnect();
-    }
+  private _handleClose() {
+    this.client.close();
     this.parentNode!.removeChild(this);
   }
 

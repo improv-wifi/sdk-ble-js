@@ -1,3 +1,4 @@
+import { ImprovBluetoothLE } from "./ble";
 import { IMPROV_BLE_SERVICE } from "./const";
 import { LaunchButton } from "./launch-button";
 import "./provision-dialog";
@@ -18,7 +19,7 @@ export const startProvisioning = async (button: LaunchButton) => {
   }
 
   const el = document.createElement("improv-wifi-provision-dialog");
-  el.device = device;
+  el.client = new ImprovBluetoothLE(device, console);
   el.stateUpdateCallback = (state) => {
     fireEvent(button, "state-changed", state);
   };

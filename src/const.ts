@@ -1,3 +1,9 @@
+export interface Logger {
+  log(msg: string, ...args: any[]): void;
+  error(msg: string, ...args: any[]): void;
+  debug(msg: string, ...args: any[]): void;
+}
+
 export const IMPROV_BLE_SERVICE = "00467768-6228-2272-4663-277478268000";
 export const IMPROV_BLE_CURRENT_STATE_CHARACTERISTIC =
   "00467768-6228-2272-4663-277478268001";
