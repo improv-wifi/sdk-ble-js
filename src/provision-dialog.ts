@@ -141,7 +141,7 @@ class ProvisionDialog extends LitElement {
 
     return html`
       <div>
-        Enter the Wi-Fi credentials of the network that you want
+        Enter the credentials of the Wi-Fi network that you want
         ${this.client.name || "your device"} to connect to.
         ${hasIdentifyCapability(this._improvCapabilities)
           ? html`
@@ -152,15 +152,15 @@ class ProvisionDialog extends LitElement {
           : ""}
       </div>
       ${error ? html`<p class="error">${error}</p>` : ""}
-      <ib-textfield label="Wi-Fi SSID" name="ssid"></ib-textfield>
+      <ib-textfield label="Network Name" name="ssid"></ib-textfield>
       <ib-textfield
-        label="Wi-Fi password"
+        label="Password"
         name="password"
         type="password"
       ></ib-textfield>
       <ib-button
         slot="primaryAction"
-        label="Save"
+        label="Connect"
         @click=${this._provision}
       ></ib-button>
       <ib-button
