@@ -217,7 +217,7 @@ export class ImprovBluetoothLE extends EventTarget {
         valueBytes[i] = encodedResult.getUint8(valueOffset + i);
       }
       result.values.push(decoder.decode(valueBytes));
-      start += valueLength;
+      start += valueLength + 1; // +1 for length byte
     }
 
     this.RPCResult = result;
