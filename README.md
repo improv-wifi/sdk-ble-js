@@ -1,4 +1,4 @@
-# JavaScript SDK for Improv Wi-Fi
+# JavaScript SDK for Improv Wi-Fi over BLE
 
 ## Installation
 
