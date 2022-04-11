@@ -79,19 +79,19 @@ export class ImprovBluetoothLE extends EventTarget {
       );
     }
 
-    this._currentStateChar.startNotifications();
+    await this._currentStateChar.startNotifications();
     this._currentStateChar.addEventListener(
       "characteristicvaluechanged",
       (ev: any) => this._handleImprovCurrentStateChange(ev.target.value)
     );
 
-    this._errorStateChar.startNotifications();
+    await this._errorStateChar.startNotifications();
     this._errorStateChar.addEventListener(
       "characteristicvaluechanged",
       (ev: any) => this._handleImprovErrorStateChange(ev.target.value)
     );
 
-    this._rpcResultChar.startNotifications();
+    await this._rpcResultChar.startNotifications();
     this._rpcResultChar.addEventListener(
       "characteristicvaluechanged",
       (ev: any) => this._handleImprovRPCResultChange(ev.target.value)
