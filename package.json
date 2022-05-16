@@ -22,7 +22,7 @@
   "dependencies": {
     "@material/mwc-button": "^0.25.3",
     "@material/mwc-circular-progress": "^0.25.3",
-    "@material/mwc-dialog": "^0.25.3",
+    "@material/mwc-dialog": "^0.26.1",
     "@material/mwc-textfield": "^0.25.3",
     "lit": "^2.0.0",
     "tslib": "^2.3.1"
