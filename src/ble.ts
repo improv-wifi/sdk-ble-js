@@ -179,7 +179,7 @@ export class ImprovBluetoothLE extends EventTarget {
     const state = encodedState.getUint8(0) as ImprovCurrentState;
     this.logger.debug("improv current state", state);
     this.currentState = state;
-    this.dispatchEvent(new CustomEvent("state-change"));
+    this.dispatchEvent(new CustomEvent("state-changed"));
   }
 
   private _handleImprovErrorStateChange(encodedState: DataView) {
