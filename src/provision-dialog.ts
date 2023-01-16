@@ -113,14 +113,14 @@ class ProvisionDialog extends LitElement {
         <div class="icon">${icon}</div>
         ${label}
       </div>
-      ${showClose &&
-      html`
-        <ib-button
-          slot="primaryAction"
-          dialogAction="ok"
-          label="Close"
-        ></ib-button>
-      `}
+      ${showClose ?
+        html`
+          <ib-button
+            slot="primaryAction"
+            dialogAction="ok"
+            label="Close"
+          ></ib-button>
+        ` : ``}
     `;
   }
 
