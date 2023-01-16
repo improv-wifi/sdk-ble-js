@@ -20,7 +20,7 @@ const AUTHORIZE_ICON = "👉";
 
 @customElement("improv-wifi-provision-dialog")
 class ProvisionDialog extends LitElement {
-  public client!: ImprovBluetoothLE;
+  public device!: BluetoothDevice;
 
   public stateUpdateCallback!: (state: ImprovState) => void;
 
@@ -36,6 +36,15 @@ class ProvisionDialog extends LitElement {
 
   @query("ib-textfield[name=ssid]") private _inputSSID!: IbTextfield;
   @query("ib-textfield[name=password]") private _inputPassword!: IbTextfield;
+
+  private __client?: ImprovBluetoothLE;
+
+  private get _client(): ImprovBluetoothLE {
+    if (!this.__client) {
+      this.__client = new ImprovBluetoothLE(this.device, console);
+    }
+    return this.__client;
+  }
 
   protected render() {
     let heading: string = "";
@@ -113,14 +122,15 @@ class ProvisionDialog extends LitElement {
         <div class="icon">${icon}</div>
         ${label}
       </div>
-      ${showClose ?
-        html`
-          <ib-button
-            slot="primaryAction"
-            dialogAction="ok"
-            label="Close"
-          ></ib-button>
-        ` : ``}
+      ${showClose
+        ? html`
+            <ib-button
+              slot="primaryAction"
+              dialogAction="ok"
+              label="Close"
+            ></ib-button>
+          `
+        : ``}
     `;
   }
 
@@ -142,7 +152,7 @@ class ProvisionDialog extends LitElement {
     return html`
       <div>
         Enter the credentials of the Wi-Fi network that you want
-        ${this.client.name || "your device"} to connect to.
+        ${this._client.name || "your device"} to connect to.
         ${hasIdentifyCapability(this._improvCapabilities)
           ? html`
               <button class="link" @click=${this._identify}>
@@ -177,7 +187,7 @@ class ProvisionDialog extends LitElement {
         <div class="icon">${OK_ICON}</div>
         Provisioned!
       </div>
-      ${this.client.nextUrl === undefined
+      ${this._client.nextUrl === undefined
         ? html`
             <ib-button
               slot="primaryAction"
@@ -187,7 +197,7 @@ class ProvisionDialog extends LitElement {
           `
         : html`
             <a
-              href=${this.client.nextUrl}
+              href=${this._client.nextUrl}
               slot="primaryAction"
               class="has-button"
               dialogAction="ok"
@@ -200,13 +210,13 @@ class ProvisionDialog extends LitElement {
 
   protected firstUpdated(changedProps: PropertyValues) {
     super.firstUpdated(changedProps);
-    this.client.addEventListener("state-changed", () => {
+    this._client.addEventListener("state-changed", () => {
       this._state = "IMPROV-STATE";
       this._busy = false;
-      this._improvCurrentState = this.client.currentState;
+      this._improvCurrentState = this._client.currentState;
     });
-    this.client.addEventListener("error-changed", () => {
-      this._improvErrorState = this.client.errorState;
+    this._client.addEventListener("error-changed", () => {
+      this._improvErrorState = this._client.errorState;
       // Sending an RPC command sets error to no error.
       // If we get a real error it means the RPC command is done.
 
@@ -214,7 +224,7 @@ class ProvisionDialog extends LitElement {
         this._busy = false;
       }
     });
-    this.client.addEventListener("disconnect", () => {
+    this._client.addEventListener("disconnect", () => {
       // If we're provisioned, we expect to be disconnected.
       if (
         this._state === "IMPROV-STATE" &&
@@ -230,10 +240,10 @@ class ProvisionDialog extends LitElement {
 
   private async _connect() {
     try {
-      await this.client.initialize();
-      this._improvCurrentState = this.client.currentState;
-      this._improvErrorState = this.client.errorState;
-      this._improvCapabilities = this.client.capabilities;
+      await this._client.initialize();
+      this._improvCurrentState = this._client.currentState;
+      this._improvErrorState = this._client.errorState;
+      this._improvCapabilities = this._client.capabilities;
       this._state = "IMPROV-STATE";
     } catch (err: any) {
       this._state = "ERROR";
@@ -244,7 +254,7 @@ class ProvisionDialog extends LitElement {
   private async _provision() {
     this._busy = true;
     try {
-      await this.client.provision(
+      await this._client.provision(
         this._inputSSID.value,
         this._inputPassword.value
       );
@@ -256,7 +266,7 @@ class ProvisionDialog extends LitElement {
   }
 
   private _identify() {
-    this.client.identify();
+    this._client.identify();
   }
 
   protected updated(changedProps: PropertyValues) {
@@ -287,7 +297,7 @@ class ProvisionDialog extends LitElement {
   }
 
   private _handleClose() {
-    this.client.close();
+    this._client.close();
     this.parentNode!.removeChild(this);
   }
 
