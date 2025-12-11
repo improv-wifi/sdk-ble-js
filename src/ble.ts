@@ -163,7 +163,7 @@ export class ImprovBluetoothLE extends EventTarget {
 
     return await new Promise<ImprovRPCResult>((resolve, reject) => {
       this._rpcFeedback = { command, resolve, reject };
-      this.sendRPC(command, data);
+      return this.sendRPC(command, data);
     });
   }
 
@@ -172,7 +172,7 @@ export class ImprovBluetoothLE extends EventTarget {
     const payload = new Uint8Array([command, data.length, ...data, 0]);
     payload[payload.length - 1] = payload.reduce((sum, cur) => sum + cur, 0);
     this.RPCResult = undefined;
-    this._rpcCommandChar!.writeValueWithoutResponse(payload);
+    return this._rpcCommandChar!.writeValue(payload);
   }
 
   private _handleImprovCurrentStateChange(encodedState: DataView) {
