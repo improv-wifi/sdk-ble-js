@@ -29,7 +29,10 @@ export class ImprovBluetoothLE extends EventTarget {
     reject: (err: ImprovErrorState) => void;
   };
 
-  constructor(public device: BluetoothDevice, public logger: Logger) {
+  constructor(
+    public device: BluetoothDevice,
+    public logger: Logger,
+  ) {
     super();
   }
 
@@ -51,49 +54,48 @@ export class ImprovBluetoothLE extends EventTarget {
 
     await this.device.gatt!.connect();
 
-    const service = await this.device.gatt!.getPrimaryService(
-      IMPROV_BLE_SERVICE
-    );
+    const service =
+      await this.device.gatt!.getPrimaryService(IMPROV_BLE_SERVICE);
 
     this._currentStateChar = await service.getCharacteristic(
-      IMPROV_BLE_CURRENT_STATE_CHARACTERISTIC
+      IMPROV_BLE_CURRENT_STATE_CHARACTERISTIC,
     );
     this._errorStateChar = await service.getCharacteristic(
-      IMPROV_BLE_ERROR_STATE_CHARACTERISTIC
+      IMPROV_BLE_ERROR_STATE_CHARACTERISTIC,
     );
     this._rpcCommandChar = await service.getCharacteristic(
-      IMPROV_BLE_RPC_COMMAND_CHARACTERISTIC
+      IMPROV_BLE_RPC_COMMAND_CHARACTERISTIC,
     );
     this._rpcResultChar = await service.getCharacteristic(
-      IMPROV_BLE_RPC_RESULT_CHARACTERISTIC
+      IMPROV_BLE_RPC_RESULT_CHARACTERISTIC,
     );
     try {
       const capabilitiesChar = await service.getCharacteristic(
-        IMPROV_BLE_CAPABILITIES_CHARACTERISTIC
+        IMPROV_BLE_CAPABILITIES_CHARACTERISTIC,
       );
       const capabilitiesValue = await capabilitiesChar.readValue();
       this.capabilities = capabilitiesValue.getUint8(0);
     } catch (err) {
       console.warn(
-        "Firmware not according to spec, missing capability support."
+        "Firmware not according to spec, missing capability support.",
       );
     }
 
     this._currentStateChar.addEventListener(
       "characteristicvaluechanged",
-      (ev: any) => this._handleImprovCurrentStateChange(ev.target.value)
+      (ev: any) => this._handleImprovCurrentStateChange(ev.target.value),
     );
     await this._currentStateChar.startNotifications();
 
     this._errorStateChar.addEventListener(
       "characteristicvaluechanged",
-      (ev: any) => this._handleImprovErrorStateChange(ev.target.value)
+      (ev: any) => this._handleImprovErrorStateChange(ev.target.value),
     );
     await this._errorStateChar.startNotifications();
 
     this._rpcResultChar.addEventListener(
       "characteristicvaluechanged",
-      (ev: any) => this._handleImprovRPCResultChange(ev.target.value)
+      (ev: any) => this._handleImprovRPCResultChange(ev.target.value),
     );
     await this._rpcResultChar.startNotifications();
 
@@ -117,7 +119,7 @@ export class ImprovBluetoothLE extends EventTarget {
 
   public async provision(
     ssid: string,
-    password: string
+    password: string,
   ): Promise<string | undefined> {
     const encoder = new TextEncoder();
     const ssidEncoded = encoder.encode(ssid);
@@ -131,7 +133,7 @@ export class ImprovBluetoothLE extends EventTarget {
     try {
       const rpcResult = await this.sendRPCWithResponse(
         ImprovRPCCommand.SEND_WIFI_SETTINGS,
-        data
+        data,
       );
       this.logger.debug("Provisioned! Disconnecting gatt");
       // We're going to set this result manually in case we get RPC result first
@@ -151,13 +153,13 @@ export class ImprovBluetoothLE extends EventTarget {
 
   public async sendRPCWithResponse(
     command: ImprovRPCCommand,
-    data: Uint8Array
+    data: Uint8Array,
   ) {
     // Commands that receive feedback will finish when either
     // the state changes or the error code becomes not 0.
     if (this._rpcFeedback) {
       throw new Error(
-        "Only 1 RPC command that requires feedback can be active"
+        "Only 1 RPC command that requires feedback can be active",
       );
     }
 

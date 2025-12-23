@@ -1,14 +1,13 @@
 import { LitElement, html, PropertyValues, css, TemplateResult } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 
+import "@material/web/button/outlined-button.js";
+import "@material/web/button/filled-button.js";
+import "@material/web/dialog/dialog.js";
+import "@material/web/progress/circular-progress.js";
+import "@material/web/textfield/outlined-text-field.js";
 
-import "@material/web/button/outlined-button.js"
-import "@material/web/button/filled-button.js"
-import "@material/web/dialog/dialog.js"
-import "@material/web/progress/circular-progress.js"
-import "@material/web/textfield/outlined-text-field.js"
-
-import type { MdOutlinedTextField } from "@material/web/textfield/outlined-text-field.js"
+import type { MdOutlinedTextField } from "@material/web/textfield/outlined-text-field.js";
 
 import {
   hasIdentifyCapability,
@@ -39,8 +38,10 @@ class ProvisionDialog extends LitElement {
 
   private _error?: string;
 
-  @query("md-outlined-text-field[name=ssid]") private _inputSSID!: MdOutlinedTextField;
-  @query("md-outlined-text-field[name=password]") private _inputPassword!: MdOutlinedTextField;
+  @query("md-outlined-text-field[name=ssid]")
+  private _inputSSID!: MdOutlinedTextField;
+  @query("md-outlined-text-field[name=password]")
+  private _inputPassword!: MdOutlinedTextField;
 
   private __client?: ImprovBluetoothLE;
 
@@ -69,7 +70,7 @@ class ProvisionDialog extends LitElement {
     ) {
       content = this._renderMessage(
         AUTHORIZE_ICON,
-        "Press the authorize button on the device"
+        "Press the authorize button on the device",
       );
     } else if (this._improvCurrentState === ImprovCurrentState.AUTHORIZED) {
       if (this._busy) {
@@ -78,21 +79,25 @@ class ProvisionDialog extends LitElement {
         heading = "Configure Wi-Fi";
         content = this._renderImprovAuthorized();
         actions = html`${this._renderCloseAction()}
-          <md-filled-button @click=${this._provision}>Connect</md-filled-button>
-        `;
+          <md-filled-button @click=${this._provision}
+            >Connect</md-filled-button
+          > `;
       }
     } else if (this._improvCurrentState === ImprovCurrentState.PROVISIONING) {
       content = this._renderProgress("Provisioning");
     } else if (this._improvCurrentState === ImprovCurrentState.PROVISIONED) {
       content = this._renderImprovProvisioned();
-      actions = this._client.nextUrl === undefined
+      actions =
+        this._client.nextUrl === undefined
           ? this._renderCloseAction()
           : html`${this._renderCloseAction()}
-          <md-filled-button href=${this._client.nextUrl} form="improv-form">Next</md-filled-button>`;
+              <md-filled-button href=${this._client.nextUrl} form="improv-form"
+                >Next</md-filled-button
+              >`;
     } else {
       content = this._renderMessage(
         ERROR_ICON,
-        `Unexpected state: ${this._state} - ${this._improvCurrentState}`
+        `Unexpected state: ${this._state} - ${this._improvCurrentState}`,
       );
       actions = this._renderCloseAction();
     }
@@ -101,13 +106,15 @@ class ProvisionDialog extends LitElement {
       <md-dialog open @close=${this._handleClose}>
         <div slot="headline">${heading}</div>
         <form slot="content" id="improv-form" method="dialog">${content}</form>
-        ${actions ? html`<div slot="actions">${actions}</div>` : ''}
+        ${actions ? html`<div slot="actions">${actions}</div>` : ""}
       </md-dialog>
     `;
   }
 
   _renderCloseAction() {
-    return html`<md-outlined-button form="improv-form">Close</md-outlined-button>`
+    return html`<md-outlined-button form="improv-form"
+      >Close</md-outlined-button
+    >`;
   }
 
   _renderProgress(label: string) {
@@ -158,11 +165,14 @@ class ProvisionDialog extends LitElement {
           : ""}
       </div>
       ${error ? html`<p class="error">${error}</p>` : ""}
-      <md-outlined-text-field label="Network Name" name="ssid"></md-outlined-text-field>
       <md-outlined-text-field
-          label="Password"
-          name="password"
-          type="password"
+        label="Network Name"
+        name="ssid"
+      ></md-outlined-text-field>
+      <md-outlined-text-field
+        label="Password"
+        name="password"
+        type="password"
       ></md-outlined-text-field>
     `;
   }
@@ -224,7 +234,7 @@ class ProvisionDialog extends LitElement {
     try {
       await this._client.provision(
         this._inputSSID.value,
-        this._inputPassword.value
+        this._inputPassword.value,
       );
     } catch (err) {
       // Ignore, error state takes care of this.
@@ -280,7 +290,7 @@ class ProvisionDialog extends LitElement {
       display: block;
       margin-top: 16px;
     }
-    
+
     .center {
       text-align: center;
     }
@@ -294,7 +304,8 @@ class ProvisionDialog extends LitElement {
     }
     .error {
       color: #db4437;
-    }`;
+    }
+  `;
 }
 
 declare global {
