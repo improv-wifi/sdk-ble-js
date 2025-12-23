@@ -1,10 +1,15 @@
 import { LitElement, html, PropertyValues, css, TemplateResult } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
-import "./components/ib-dialog";
-import "./components/ib-textfield";
-import "./components/ib-button";
-import "./components/ib-circular-progress";
-import type { IbTextfield } from "./components/ib-textfield";
+
+
+import "@material/web/button/outlined-button.js"
+import "@material/web/button/filled-button.js"
+import "@material/web/dialog/dialog.js"
+import "@material/web/progress/circular-progress.js"
+import "@material/web/textfield/outlined-text-field.js"
+
+import type { MdOutlinedTextField } from "@material/web/textfield/outlined-text-field.js"
+
 import {
   hasIdentifyCapability,
   ImprovCurrentState,
@@ -34,8 +39,8 @@ class ProvisionDialog extends LitElement {
 
   private _error?: string;
 
-  @query("ib-textfield[name=ssid]") private _inputSSID!: IbTextfield;
-  @query("ib-textfield[name=password]") private _inputPassword!: IbTextfield;
+  @query("md-outlined-text-field[name=ssid]") private _inputSSID!: MdOutlinedTextField;
+  @query("md-outlined-text-field[name=password]") private _inputPassword!: MdOutlinedTextField;
 
   private __client?: ImprovBluetoothLE;
 
@@ -49,88 +54,79 @@ class ProvisionDialog extends LitElement {
   protected render() {
     let heading: string = "";
     let content: TemplateResult;
-    let hideActions = false;
+    let actions: TemplateResult | undefined;
 
     if (this._state === "CONNECTING") {
       content = this._renderProgress("Connecting");
-      hideActions = true;
     } else if (this._state === "ERROR") {
       content = this._renderMessage(
         ERROR_ICON,
         `An error occurred. ${this._error}`,
-        true
       );
+      actions = this._renderCloseAction();
     } else if (
       this._improvCurrentState === ImprovCurrentState.AUTHORIZATION_REQUIRED
     ) {
       content = this._renderMessage(
         AUTHORIZE_ICON,
-        "Press the authorize button on the device",
-        false
+        "Press the authorize button on the device"
       );
     } else if (this._improvCurrentState === ImprovCurrentState.AUTHORIZED) {
       if (this._busy) {
         content = this._renderProgress("Provisioning");
-        hideActions = true;
       } else {
         heading = "Configure Wi-Fi";
         content = this._renderImprovAuthorized();
+        actions = html`${this._renderCloseAction()}
+          <md-filled-button @click=${this._provision}>Connect</md-filled-button>
+        `;
       }
     } else if (this._improvCurrentState === ImprovCurrentState.PROVISIONING) {
       content = this._renderProgress("Provisioning");
-      hideActions = true;
     } else if (this._improvCurrentState === ImprovCurrentState.PROVISIONED) {
       content = this._renderImprovProvisioned();
+      actions = this._client.nextUrl === undefined
+          ? this._renderCloseAction()
+          : html`${this._renderCloseAction()}
+          <md-filled-button href=${this._client.nextUrl} form="improv-form">Next</md-filled-button>`;
     } else {
       content = this._renderMessage(
         ERROR_ICON,
-        `Unexpected state: ${this._state} - ${this._improvCurrentState}`,
-        true
+        `Unexpected state: ${this._state} - ${this._improvCurrentState}`
       );
+      actions = this._renderCloseAction();
     }
 
     return html`
-      <ib-dialog
-        open
-        .heading=${heading}
-        scrimClickAction
-        @closed=${this._handleClose}
-        .hideActions=${hideActions}
-        >${content}</ib-dialog
-      >
+      <md-dialog open @close=${this._handleClose}>
+        <div slot="headline">${heading}</div>
+        <form slot="content" id="improv-form" method="dialog">${content}</form>
+        ${actions ? html`<div slot="actions">${actions}</div>` : ''}
+      </md-dialog>
     `;
+  }
+
+  _renderCloseAction() {
+    return html`<md-outlined-button form="improv-form">Close</md-outlined-button>`
   }
 
   _renderProgress(label: string) {
     return html`
       <div class="center">
         <div>
-          <ib-circular-progress
-            active
-            indeterminate
-            density="8"
-          ></ib-circular-progress>
+          <md-circular-progress indeterminate></md-circular-progress>
         </div>
         ${label}
       </div>
     `;
   }
 
-  _renderMessage(icon: string, label: string, showClose: boolean) {
+  _renderMessage(icon: string, label: string) {
     return html`
       <div class="center">
         <div class="icon">${icon}</div>
         ${label}
       </div>
-      ${showClose
-        ? html`
-            <ib-button
-              slot="primaryAction"
-              dialogAction="ok"
-              label="Close"
-            ></ib-button>
-          `
-        : ``}
     `;
   }
 
@@ -155,29 +151,19 @@ class ProvisionDialog extends LitElement {
         ${this._client.name || "your device"} to connect to.
         ${hasIdentifyCapability(this._improvCapabilities)
           ? html`
-              <button class="link" @click=${this._identify}>
+              <md-filled-button @click=${this._identify}>
                 Identify the device.
-              </button>
+              </md-filled-button>
             `
           : ""}
       </div>
       ${error ? html`<p class="error">${error}</p>` : ""}
-      <ib-textfield label="Network Name" name="ssid"></ib-textfield>
-      <ib-textfield
-        label="Password"
-        name="password"
-        type="password"
-      ></ib-textfield>
-      <ib-button
-        slot="primaryAction"
-        label="Connect"
-        @click=${this._provision}
-      ></ib-button>
-      <ib-button
-        slot="secondaryAction"
-        dialogAction="close"
-        label="Cancel"
-      ></ib-button>
+      <md-outlined-text-field label="Network Name" name="ssid"></md-outlined-text-field>
+      <md-outlined-text-field
+          label="Password"
+          name="password"
+          type="password"
+      ></md-outlined-text-field>
     `;
   }
 
@@ -187,24 +173,6 @@ class ProvisionDialog extends LitElement {
         <div class="icon">${OK_ICON}</div>
         Provisioned!
       </div>
-      ${this._client.nextUrl === undefined
-        ? html`
-            <ib-button
-              slot="primaryAction"
-              dialogAction="ok"
-              label="Close"
-            ></ib-button>
-          `
-        : html`
-            <a
-              href=${this._client.nextUrl}
-              slot="primaryAction"
-              class="has-button"
-              dialogAction="ok"
-            >
-              <ib-button label="Next"></ib-button>
-            </a>
-          `}
     `;
   }
 
@@ -307,20 +275,17 @@ class ProvisionDialog extends LitElement {
       --mdc-theme-primary: var(--improv-primary-color, #03a9f4);
       --mdc-theme-on-primary: var(--improv-on-primary-color, #fff);
     }
-    ib-textfield {
+
+    md-outlined-text-field {
       display: block;
-    }
-    ib-textfield {
       margin-top: 16px;
     }
+    
     .center {
       text-align: center;
     }
-    ib-circular-progress {
+    md-circular-progress {
       margin-bottom: 16px;
-    }
-    a.has-button {
-      text-decoration: none;
     }
     .icon {
       font-size: 50px;
@@ -329,18 +294,7 @@ class ProvisionDialog extends LitElement {
     }
     .error {
       color: #db4437;
-    }
-    button.link {
-      background: none;
-      color: inherit;
-      border: none;
-      padding: 0;
-      font: inherit;
-      text-align: left;
-      text-decoration: underline;
-      cursor: pointer;
-    }
-  `;
+    }`;
 }
 
 declare global {
