@@ -281,9 +281,9 @@ class ProvisionDialog extends LitElement {
 
   static styles = css`
     :host {
-      --mdc-dialog-max-width: 390px;
-      --mdc-theme-primary: var(--improv-primary-color, #03a9f4);
-      --mdc-theme-on-primary: var(--improv-on-primary-color, #fff);
+      --md-dialog-max-width: 390px;
+      --md-sys-color-primary: var(--improv-primary-color, #03a9f4);
+      --md-sys-color-on-primary: var(--improv-on-primary-color, #fff);
     }
 
     md-outlined-text-field {
