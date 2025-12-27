@@ -21,6 +21,7 @@ import { ImprovBluetoothLE } from "./ble";
 const ERROR_ICON = "⚠️";
 const OK_ICON = "🎉";
 const AUTHORIZE_ICON = "👉";
+const IDENTIFY_ICON = "🔔";
 
 @customElement("improv-wifi-provision-dialog")
 class ProvisionDialog extends LitElement {
@@ -78,10 +79,19 @@ class ProvisionDialog extends LitElement {
       } else {
         heading = "Configure Wi-Fi";
         content = this._renderImprovAuthorized();
-        actions = html`${this._renderCloseAction()}
-          <md-filled-button @click=${this._provision}
+        actions = html`
+          ${hasIdentifyCapability(this._improvCapabilities)
+            ? html`
+                <md-filled-button class="identify-btn" @click=${this._identify}>
+                  ${IDENTIFY_ICON} Identify
+                </md-filled-button>
+              `
+            : ""}
+          ${this._renderCloseAction()}
+          <md-filled-button @click=${this._provision} slot="end"
             >Connect</md-filled-button
-          > `;
+          >
+        `;
       }
     } else if (this._improvCurrentState === ImprovCurrentState.PROVISIONING) {
       content = this._renderProgress("Provisioning");
@@ -112,7 +122,10 @@ class ProvisionDialog extends LitElement {
   }
 
   _renderCloseAction() {
-    return html`<md-outlined-button form="improv-form"
+    return html`<md-outlined-button
+      form="improv-form"
+      @click="${this._handleClose}"
+      slot="end"
       >Close</md-outlined-button
     >`;
   }
@@ -156,20 +169,15 @@ class ProvisionDialog extends LitElement {
       <div>
         Enter the credentials of the Wi-Fi network that you want
         ${this._client.name || "your device"} to connect to.
-        ${hasIdentifyCapability(this._improvCapabilities)
-          ? html`
-              <md-filled-button @click=${this._identify}>
-                Identify the device.
-              </md-filled-button>
-            `
-          : ""}
       </div>
       ${error ? html`<p class="error">${error}</p>` : ""}
       <md-outlined-text-field
+        required
         label="Network Name"
         name="ssid"
       ></md-outlined-text-field>
       <md-outlined-text-field
+        required
         label="Password"
         name="password"
         type="password"
@@ -243,7 +251,9 @@ class ProvisionDialog extends LitElement {
     }
   }
 
-  private _identify() {
+  private _identify(event?: Event) {
+    event?.preventDefault();
+    event?.stopPropagation();
     this._client.identify();
   }
 
@@ -304,6 +314,11 @@ class ProvisionDialog extends LitElement {
     }
     .error {
       color: #db4437;
+    }
+    .identify-btn {
+      --md-filled-button-container-color: #ff9800;
+      --md-filled-button-label-text-color: #fff;
+      margin-right: auto;
     }
   `;
 }
