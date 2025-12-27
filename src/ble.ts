@@ -10,7 +10,26 @@ import {
   ImprovRPCResult,
   IMPROV_BLE_CAPABILITIES_CHARACTERISTIC,
   Logger,
+  hasGetDeviceInfoCapability,
+  hasGetWifiNetworksCapability,
 } from "./const";
+
+export class ImprovBluetoothDeviceInfo {
+  constructor(
+    public firmwareName: string,
+    public firmwareVersion: string,
+    public hardwareChipVariant: string,
+    public deviceName: string,
+  ) {}
+}
+
+export class ImprovBluetoothWifiNetwork {
+  constructor(
+    public ssid: string,
+    public rssi: number,
+    public security: string[],
+  ) {}
+}
 
 export class ImprovBluetoothLE extends EventTarget {
   public currentState?: ImprovCurrentState | undefined;
@@ -18,6 +37,8 @@ export class ImprovBluetoothLE extends EventTarget {
   public RPCResult?: ImprovRPCResult;
   public capabilities = 0;
   public nextUrl: string | undefined;
+  public deviceInfo?: ImprovBluetoothDeviceInfo;
+  public wifiNetworks: ImprovBluetoothWifiNetwork[] = [];
 
   private _currentStateChar?: BluetoothRemoteGATTCharacteristic;
   private _errorStateChar?: BluetoothRemoteGATTCharacteristic;
@@ -104,6 +125,31 @@ export class ImprovBluetoothLE extends EventTarget {
 
     this._handleImprovCurrentStateChange(curState);
     this._handleImprovErrorStateChange(errorState);
+
+    if (hasGetDeviceInfoCapability(this.capabilities)) {
+      try {
+        const deviceInfoResponse = await this.sendRPCWithResponse(
+          ImprovRPCCommand.GET_DEVICE_INFO,
+          new Uint8Array(),
+        );
+        this.deviceInfo = new ImprovBluetoothDeviceInfo(
+          deviceInfoResponse.values[0],
+          deviceInfoResponse.values[1],
+          deviceInfoResponse.values[2],
+          deviceInfoResponse.values[3],
+        ); // get device info on initialize() but it won't change so we don't need to expose it
+      } catch (err) {
+        console.warn("Failed to get device info, ignoring.", err);
+      }
+    }
+
+    if (hasGetWifiNetworksCapability(this.capabilities)) {
+      try {
+        await this.scanWifiNetworks();
+      } catch (err) {
+        console.warn("Failed to get wifi networks, ignoring.", err);
+      }
+    }
   }
 
   public close() {
@@ -113,8 +159,29 @@ export class ImprovBluetoothLE extends EventTarget {
     }
   }
 
+  public async scanWifiNetworks() {
+    if (!hasGetWifiNetworksCapability(this.capabilities)) {
+      throw new Error("Device does not support scanning wifi networks");
+    }
+    const wifiNetworksResponse = await this.sendRPCWithResponse(
+      ImprovRPCCommand.GET_WIFI_NETWORKS,
+      new Uint8Array(),
+    );
+    const networks = [];
+    for (let i = 0; i < wifiNetworksResponse.values.length; i += 3) {
+      networks.push(
+        new ImprovBluetoothWifiNetwork(
+          wifiNetworksResponse.values[i],
+          parseInt(wifiNetworksResponse.values[i + 1]),
+          wifiNetworksResponse.values[i + 2].split("/"),
+        ),
+      );
+    }
+    this.wifiNetworks = networks;
+  }
+
   public identify() {
-    this.sendRPC(ImprovRPCCommand.IDENTIFY, new Uint8Array());
+    return this.sendRPC(ImprovRPCCommand.IDENTIFY, new Uint8Array());
   }
 
   public async provision(
