@@ -20,6 +20,8 @@ export class ImprovBluetoothDeviceInfo {
     public firmwareVersion: string,
     public hardwareChipVariant: string,
     public deviceName: string,
+    public osName: string | null,
+    public osVersion: string | null,
   ) {}
 }
 
@@ -137,6 +139,12 @@ export class ImprovBluetoothLE extends EventTarget {
           deviceInfoResponse.values[1],
           deviceInfoResponse.values[2],
           deviceInfoResponse.values[3],
+          deviceInfoResponse.values.length > 4
+            ? deviceInfoResponse.values[4]
+            : null,
+          deviceInfoResponse.values.length > 5
+            ? deviceInfoResponse.values[5]
+            : null,
         ); // get device info on initialize() but it won't change so we don't need to expose it
       } catch (err) {
         console.warn("Failed to get device info, ignoring.", err);

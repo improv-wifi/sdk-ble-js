@@ -231,6 +231,14 @@ class ProvisionDialog extends LitElement {
           <div>
             Chip<span>${this._improvDeviceInfo.hardwareChipVariant}</span>
           </div>
+          ${this._improvDeviceInfo.osName
+            ? html`<div>OS<span>${this._improvDeviceInfo.osName}</span></div>`
+            : ""}
+          ${this._improvDeviceInfo.osVersion
+            ? html`<div>
+                OS Version<span>${this._improvDeviceInfo.osVersion}</span>
+              </div>`
+            : ""}
         </div>`;
   }
 
