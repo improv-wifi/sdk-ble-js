@@ -5,6 +5,7 @@ import {
   css,
   TemplateResult,
   nothing,
+  svg,
 } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 
@@ -41,15 +42,91 @@ import {
 const ERROR_ICON = "⚠️";
 const OK_ICON = "🎉";
 const AUTHORIZE_ICON = "👉";
-const MATERIAL_SYMBOLS_FONT_ID = "material-symbols-font";
-const MATERIAL_SYMBOLS_FONT_URL =
-  "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined";
-
-function getWifiIconName(rssi: number): string {
-  if (rssi >= -50) return "network_wifi";
-  if (rssi >= -60) return "network_wifi_3_bar";
-  if (rssi >= -70) return "network_wifi_2_bar";
-  return "network_wifi_1_bar";
+const refreshIcon = svg`
+  <svg viewBox="0 0 24 24">
+    <path
+      fill="currentColor"
+      d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"
+    />
+  </svg>
+`;
+const infoIcon = svg`
+  <svg viewBox="0 -960 960 960" width="24px">
+      <path 
+        fill="currentColor"
+        d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"
+      />
+  </svg>
+`;
+const wifiIcon = svg`
+  <svg viewBox="0 -960 960 960">
+    <path 
+      fill="currentColor"
+      d="M480-120q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29ZM254-346l-84-86q59-59 138.5-93.5T480-560q92 0 171.5 35T790-430l-84 84q-44-44-102-69t-124-25q-66 0-124 25t-102 69ZM84-516 0-600q92-94 215-147t265-53q142 0 265 53t215 147l-84 84q-77-77-178.5-120.5T480-680q-116 0-217.5 43.5T84-516Z"
+    />
+  </svg>
+`;
+const networkWifiFull = svg`
+  <svg viewBox="0 -960 960 960" width="24px">
+    <path 
+      fill="currentColor"
+      d="M480-120 0-600q95-97 219.5-148.5T480-800q137 0 261 51t219 149L480-120ZM174-540q67-48 145-74t161-26q83 0 161 26t145 74l58-58q-79-60-172-91t-192-31q-99 0-192 31t-172 91l58 58Z"
+    />
+  </svg>
+`;
+const networkWifi3Bar = svg`
+  <svg viewBox="0 -960 960 960" width="24px">
+    <path 
+      fill="currentColor"
+      d="M480-120 0-600q96-98 220-149t260-51q137 0 261 51t219 149L480-120ZM232-482q53-38 116-59.5T480-563q69 0 132 21.5T728-482l116-116q-78-59-170.5-90.5T480-720q-101 0-193.5 31.5T116-598l116 116Z"
+    />
+  </svg>
+`;
+const networkWifi2Bar = svg`
+  <svg viewBox="0 -960 960 960" width="24px">
+    <path 
+      fill="currentColor"
+      d="M480-120 0-600q96-98 220-149t260-51q137 0 261 51t219 149L480-120ZM299-415q38-28 84-43.5t97-15.5q51 0 97 15.5t84 43.5l183-183q-78-59-170.5-90.5T480-720q-101 0-193.5 31.5T116-598l183 183Z"    
+    />
+  </svg>
+`;
+const networkWifi1Bar = svg`
+    <svg viewBox="0 -960 960 960" width="24px">
+      <path
+        fill="currentColor" 
+        d="M480-120 0-600q96-98 220-149t260-51q137 0 261 51t219 149L480-120ZM361-353q25-18 55.5-28t63.5-10q33 0 63.5 10t55.5 28l245-245q-78-59-170.5-90.5T480-720q-101 0-193.5 31.5T116-598l245 245Z"
+      />
+    </svg>
+`;
+const visibilityIcon = svg`
+  <svg viewBox="0 -960 960 960">
+    <path 
+        fill="currentColor" 
+        d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z"
+    />
+  </svg>
+`;
+const visibilityOffIcon = svg`
+  <svg viewBox="0 -960 960 960">
+    <path
+      fill="currentColor" 
+      d="m644-428-58-58q9-47-27-88t-93-32l-58-58q17-8 34.5-12t37.5-4q75 0 127.5 52.5T660-500q0 20-4 37.5T644-428Zm128 126-58-56q38-29 67.5-63.5T832-500q-50-101-143.5-160.5T480-720q-29 0-57 4t-55 12l-62-62q41-17 84-25.5t90-8.5q151 0 269 83.5T920-500q-23 59-60.5 109.5T772-302Zm20 246L624-222q-35 11-70.5 16.5T480-200q-151 0-269-83.5T40-500q21-53 53-98.5t73-81.5L56-792l56-56 736 736-56 56ZM222-624q-29 26-53 57t-41 67q50 101 143.5 160.5T480-280q20 0 39-2.5t39-5.5l-36-38q-11 3-21 4.5t-21 1.5q-75 0-127.5-52.5T300-500q0-11 1.5-21t4.5-21l-84-82Zm319 93Zm-151 75Z"
+    />
+  </svg>
+`;
+const notificationsActiveIcon = svg`
+    <svg viewBox="0 -960 960 960" width="24px">
+      <path 
+        fill="currentColor" 
+        d="M80-560q0-100 44.5-183.5T244-882l47 64q-60 44-95.5 111T160-560H80Zm720 0q0-80-35.5-147T669-818l47-64q75 55 119.5 138.5T880-560h-80ZM160-200v-80h80v-280q0-83 50-147.5T420-792v-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v28q80 20 130 84.5T720-560v280h80v80H160Zm320-300Zm0 420q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-280h320v-280q0-66-47-113t-113-47q-66 0-113 47t-47 113v280Z"
+      />
+    </svg>
+`;
+function getWifiIcon(rssi: number): TemplateResult {
+  if (rssi >= -50) return networkWifiFull;
+  if (rssi >= -60) return networkWifi3Bar;
+  if (rssi >= -70) return networkWifi2Bar;
+  return networkWifi1Bar;
 }
 
 function getSignalStrengthClass(rssi: number): string {
@@ -102,17 +179,6 @@ class ProvisionDialog extends LitElement {
 
   private __client?: ImprovBluetoothLE;
 
-  connectedCallback() {
-    super.connectedCallback();
-    if (!document.getElementById(MATERIAL_SYMBOLS_FONT_ID)) {
-      const link = document.createElement("link");
-      link.id = MATERIAL_SYMBOLS_FONT_ID;
-      link.rel = "stylesheet";
-      link.href = MATERIAL_SYMBOLS_FONT_URL;
-      document.head.appendChild(link);
-    }
-  }
-
   private get _client(): ImprovBluetoothLE {
     if (!this.__client) {
       this.__client = new ImprovBluetoothLE(this.device, console);
@@ -144,7 +210,7 @@ class ProvisionDialog extends LitElement {
       if (this._busy) {
         content = this._renderProgress("Provisioning");
       } else {
-        heading = html`<md-icon>wifi</md-icon>Configure Wi-Fi`;
+        heading = html`<md-icon>${wifiIcon}</md-icon>Configure Wi-Fi`;
         content = this._renderImprovAuthorized();
         actions = html`
           ${hasIdentifyCapability(this._improvCapabilities)
@@ -154,8 +220,8 @@ class ProvisionDialog extends LitElement {
                   slot="start"
                   has-icon
                 >
-                  <md-icon slot="icon">notifications_active</md-icon>
-                  Identify
+                  <md-icon slot="icon">${notificationsActiveIcon}</md-icon
+                  >Identify
                 </md-outlined-button>
               `
             : nothing}
@@ -229,7 +295,7 @@ class ProvisionDialog extends LitElement {
     return this._improvDeviceInfo === undefined
       ? html``
       : html`<div class="device-info">
-          <div><md-icon>info</md-icon>Device Info</div>
+          <div>${infoIcon} Device Info</div>
           <div>Name<span>${this._improvDeviceInfo.deviceName}</span></div>
           <div>Firmware<span>${this._improvDeviceInfo.firmwareName}</span></div>
           <div>
@@ -286,10 +352,10 @@ class ProvisionDialog extends LitElement {
                   .selected=${this._selectedSsid === network.ssid}
                   value=${idx}
                 >
-                  <md-icon
+                  <span
                     slot="start"
                     class=${getSignalStrengthClass(network.rssi)}
-                    >${getWifiIconName(network.rssi)}</md-icon
+                    >${getWifiIcon(network.rssi)}</span
                   >
                   <span slot="headline">${network.ssid}</span>
                   <span slot="end" class="network-details">
@@ -306,7 +372,7 @@ class ProvisionDialog extends LitElement {
             data-refresh
             @click=${this._scanWifiNetworks}
             slot="end"
-            ><md-icon>refresh</md-icon></md-outlined-icon-button
+            >${refreshIcon}</md-outlined-icon-button
           >
         </div>`
       : nothing}
@@ -362,9 +428,7 @@ class ProvisionDialog extends LitElement {
           toggle
           .selected=${this._showPassword}
         >
-          <md-icon
-            >${this._showPassword ? "visibility_off" : "visibility"}</md-icon
-          >
+          ${this._showPassword ? visibilityOffIcon : visibilityIcon}
         </md-icon-button>
       </md-outlined-text-field>
     `;
