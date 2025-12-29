@@ -1,4 +1,11 @@
-import { LitElement, html, PropertyValues, css, TemplateResult } from "lit";
+import {
+  LitElement,
+  html,
+  PropertyValues,
+  css,
+  TemplateResult,
+  nothing,
+} from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 
 import "@material/web/button/outlined-button.js";
@@ -114,7 +121,7 @@ class ProvisionDialog extends LitElement {
   }
 
   protected render() {
-    let heading: TemplateResult = html`${this._client.name || ""}`;
+    let heading: TemplateResult = html`${this._client.name || nothing}`;
     let content: TemplateResult;
     let actions: TemplateResult | undefined;
 
@@ -151,7 +158,7 @@ class ProvisionDialog extends LitElement {
                   Identify
                 </md-outlined-button>
               `
-            : ""}
+            : nothing}
           ${this._renderCloseAction()}
           <md-filled-button @click=${this._provision} slot="end"
             >Connect</md-filled-button
@@ -184,7 +191,7 @@ class ProvisionDialog extends LitElement {
       <md-dialog open @close=${this._handleClose}>
         <div slot="headline">${heading}</div>
         <form slot="content" id="improv-form" method="dialog">${content}</form>
-        ${actions ? html`<div slot="actions">${actions}</div>` : ""}
+        ${actions ? html`<div slot="actions">${actions}</div>` : nothing}
       </md-dialog>
     `;
   }
@@ -233,12 +240,12 @@ class ProvisionDialog extends LitElement {
           </div>
           ${this._improvDeviceInfo.osName
             ? html`<div>OS<span>${this._improvDeviceInfo.osName}</span></div>`
-            : ""}
+            : nothing}
           ${this._improvDeviceInfo.osVersion
             ? html`<div>
                 OS Version<span>${this._improvDeviceInfo.osVersion}</span>
               </div>`
-            : ""}
+            : nothing}
         </div>`;
   }
 
@@ -302,7 +309,7 @@ class ProvisionDialog extends LitElement {
             ><md-icon>refresh</md-icon></md-outlined-icon-button
           >
         </div>`
-      : ""}
+      : nothing}
     ${this._improvWifiNetworks.length === 0 || this._selectedSsid === null
       ? html`<md-outlined-text-field
           required
@@ -311,7 +318,7 @@ class ProvisionDialog extends LitElement {
           @input=${(e: InputEvent) =>
             (this._selectedSsid = (e.target as MdOutlinedTextField).value)}
         ></md-outlined-text-field>`
-      : ""}`;
+      : nothing}`;
   }
 
   private _togglePasswordVisibility(event: Event) {
@@ -341,7 +348,7 @@ class ProvisionDialog extends LitElement {
         Enter the credentials of the Wi-Fi network that you want
         ${this._client.name || "your device"} to connect to.
       </div>
-      ${error ? html`<p class="error">${error}</p>` : ""}
+      ${error ? html`<p class="error">${error}</p>` : nothing}
       ${this._renderNetworkName()}
       <md-outlined-text-field
         required
