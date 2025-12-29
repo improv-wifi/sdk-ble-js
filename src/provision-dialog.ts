@@ -87,9 +87,9 @@ class ProvisionDialog extends LitElement {
 
   private _error?: string;
 
-  @query("md-outlined-select") private _selectSSID!: MdOutlinedSelect;
+  @query("md-outlined-select") private _selectSSID?: MdOutlinedSelect;
   @query("md-outlined-text-field[name=ssid]")
-  private _inputSSID!: MdOutlinedTextField;
+  private _inputSSID?: MdOutlinedTextField;
   @query("md-outlined-text-field[name=password]")
   private _inputPassword!: MdOutlinedTextField;
 
@@ -308,9 +308,8 @@ class ProvisionDialog extends LitElement {
           required
           label="Network Name"
           name="ssid"
-          @input=${(e: InputEvent) => {
-            this._selectedSsid = e.data;
-          }}
+          @input=${(e: InputEvent) =>
+            (this._selectedSsid = (e.target as MdOutlinedTextField).value)}
         ></md-outlined-text-field>`
       : ""}`;
   }
@@ -484,7 +483,7 @@ class ProvisionDialog extends LitElement {
       this._improvCurrentState === ImprovCurrentState.AUTHORIZED
     ) {
       const input = this._inputSSID;
-      input.updateComplete.then(() => input.focus());
+      input?.updateComplete.then(() => input.focus());
     }
 
     let toFocus: LitElement | undefined;
