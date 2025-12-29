@@ -14,7 +14,7 @@
     "@rollup/plugin-terser": "^0.4.1",
     "@rollup/plugin-typescript": "^11.0.0",
     "@types/web-bluetooth": "^0.0.16",
-    "prettier": "^2.8.3",
+    "prettier": "^3.7.4",
     "rollup": "^3.10.0",
     "serve": "^14.1.2",
     "typescript": "^5.0.4"
