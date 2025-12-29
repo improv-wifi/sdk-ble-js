@@ -428,7 +428,9 @@ class ProvisionDialog extends LitElement {
           toggle
           .selected=${this._showPassword}
         >
-          ${this._showPassword ? visibilityOffIcon : visibilityIcon}
+          <md-icon
+            >${this._showPassword ? visibilityOffIcon : visibilityIcon}</md-icon
+          >
         </md-icon-button>
       </md-outlined-text-field>
     `;
