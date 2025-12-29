@@ -336,11 +336,11 @@ class ProvisionDialog extends LitElement {
     }
 
     return html`
+      ${this._renderDeviceInfo()}
       <div>
         Enter the credentials of the Wi-Fi network that you want
         ${this._client.name || "your device"} to connect to.
       </div>
-      ${this._renderDeviceInfo()}
       ${error ? html`<p class="error">${error}</p>` : ""}
       ${this._renderNetworkName()}
       <md-outlined-text-field
