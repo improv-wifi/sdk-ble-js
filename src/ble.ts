@@ -10,7 +10,28 @@ import {
   ImprovRPCResult,
   IMPROV_BLE_CAPABILITIES_CHARACTERISTIC,
   Logger,
+  hasGetDeviceInfoCapability,
+  hasGetWifiNetworksCapability,
 } from "./const";
+
+export class ImprovBluetoothDeviceInfo {
+  constructor(
+    public firmwareName: string,
+    public firmwareVersion: string,
+    public hardwareChipVariant: string,
+    public deviceName: string,
+    public osName: string | null,
+    public osVersion: string | null,
+  ) {}
+}
+
+export class ImprovBluetoothWifiNetwork {
+  constructor(
+    public ssid: string,
+    public rssi: number,
+    public security: string[],
+  ) {}
+}
 
 export class ImprovBluetoothLE extends EventTarget {
   public currentState?: ImprovCurrentState | undefined;
@@ -18,6 +39,8 @@ export class ImprovBluetoothLE extends EventTarget {
   public RPCResult?: ImprovRPCResult;
   public capabilities = 0;
   public nextUrl: string | undefined;
+  public deviceInfo?: ImprovBluetoothDeviceInfo;
+  public wifiNetworks: ImprovBluetoothWifiNetwork[] = [];
 
   private _currentStateChar?: BluetoothRemoteGATTCharacteristic;
   private _errorStateChar?: BluetoothRemoteGATTCharacteristic;
@@ -29,7 +52,10 @@ export class ImprovBluetoothLE extends EventTarget {
     reject: (err: ImprovErrorState) => void;
   };
 
-  constructor(public device: BluetoothDevice, public logger: Logger) {
+  constructor(
+    public device: BluetoothDevice,
+    public logger: Logger,
+  ) {
     super();
   }
 
@@ -51,49 +77,48 @@ export class ImprovBluetoothLE extends EventTarget {
 
     await this.device.gatt!.connect();
 
-    const service = await this.device.gatt!.getPrimaryService(
-      IMPROV_BLE_SERVICE
-    );
+    const service =
+      await this.device.gatt!.getPrimaryService(IMPROV_BLE_SERVICE);
 
     this._currentStateChar = await service.getCharacteristic(
-      IMPROV_BLE_CURRENT_STATE_CHARACTERISTIC
+      IMPROV_BLE_CURRENT_STATE_CHARACTERISTIC,
     );
     this._errorStateChar = await service.getCharacteristic(
-      IMPROV_BLE_ERROR_STATE_CHARACTERISTIC
+      IMPROV_BLE_ERROR_STATE_CHARACTERISTIC,
     );
     this._rpcCommandChar = await service.getCharacteristic(
-      IMPROV_BLE_RPC_COMMAND_CHARACTERISTIC
+      IMPROV_BLE_RPC_COMMAND_CHARACTERISTIC,
     );
     this._rpcResultChar = await service.getCharacteristic(
-      IMPROV_BLE_RPC_RESULT_CHARACTERISTIC
+      IMPROV_BLE_RPC_RESULT_CHARACTERISTIC,
     );
     try {
       const capabilitiesChar = await service.getCharacteristic(
-        IMPROV_BLE_CAPABILITIES_CHARACTERISTIC
+        IMPROV_BLE_CAPABILITIES_CHARACTERISTIC,
       );
       const capabilitiesValue = await capabilitiesChar.readValue();
       this.capabilities = capabilitiesValue.getUint8(0);
     } catch (err) {
       console.warn(
-        "Firmware not according to spec, missing capability support."
+        "Firmware not according to spec, missing capability support.",
       );
     }
 
     this._currentStateChar.addEventListener(
       "characteristicvaluechanged",
-      (ev: any) => this._handleImprovCurrentStateChange(ev.target.value)
+      (ev: any) => this._handleImprovCurrentStateChange(ev.target.value),
     );
     await this._currentStateChar.startNotifications();
 
     this._errorStateChar.addEventListener(
       "characteristicvaluechanged",
-      (ev: any) => this._handleImprovErrorStateChange(ev.target.value)
+      (ev: any) => this._handleImprovErrorStateChange(ev.target.value),
     );
     await this._errorStateChar.startNotifications();
 
     this._rpcResultChar.addEventListener(
       "characteristicvaluechanged",
-      (ev: any) => this._handleImprovRPCResultChange(ev.target.value)
+      (ev: any) => this._handleImprovRPCResultChange(ev.target.value),
     );
     await this._rpcResultChar.startNotifications();
 
@@ -102,6 +127,37 @@ export class ImprovBluetoothLE extends EventTarget {
 
     this._handleImprovCurrentStateChange(curState);
     this._handleImprovErrorStateChange(errorState);
+
+    if (hasGetDeviceInfoCapability(this.capabilities)) {
+      try {
+        const deviceInfoResponse = await this.sendRPCWithResponse(
+          ImprovRPCCommand.GET_DEVICE_INFO,
+          new Uint8Array(),
+        );
+        this.deviceInfo = new ImprovBluetoothDeviceInfo(
+          deviceInfoResponse.values[0],
+          deviceInfoResponse.values[1],
+          deviceInfoResponse.values[2],
+          deviceInfoResponse.values[3],
+          deviceInfoResponse.values.length > 4
+            ? deviceInfoResponse.values[4]
+            : null,
+          deviceInfoResponse.values.length > 5
+            ? deviceInfoResponse.values[5]
+            : null,
+        ); // get device info on initialize() but it won't change so we don't need to expose it
+      } catch (err) {
+        console.warn("Failed to get device info, ignoring.", err);
+      }
+    }
+
+    if (hasGetWifiNetworksCapability(this.capabilities)) {
+      try {
+        await this.scanWifiNetworks();
+      } catch (err) {
+        console.warn("Failed to get wifi networks, ignoring.", err);
+      }
+    }
   }
 
   public close() {
@@ -111,13 +167,34 @@ export class ImprovBluetoothLE extends EventTarget {
     }
   }
 
+  public async scanWifiNetworks() {
+    if (!hasGetWifiNetworksCapability(this.capabilities)) {
+      throw new Error("Device does not support scanning wifi networks");
+    }
+    const wifiNetworksResponse = await this.sendRPCWithResponse(
+      ImprovRPCCommand.GET_WIFI_NETWORKS,
+      new Uint8Array(),
+    );
+    const networks = [];
+    for (let i = 0; i < wifiNetworksResponse.values.length; i += 3) {
+      networks.push(
+        new ImprovBluetoothWifiNetwork(
+          wifiNetworksResponse.values[i],
+          parseInt(wifiNetworksResponse.values[i + 1]),
+          wifiNetworksResponse.values[i + 2].split("/"),
+        ),
+      );
+    }
+    this.wifiNetworks = networks;
+  }
+
   public identify() {
-    this.sendRPC(ImprovRPCCommand.IDENTIFY, new Uint8Array());
+    return this.sendRPC(ImprovRPCCommand.IDENTIFY, new Uint8Array());
   }
 
   public async provision(
     ssid: string,
-    password: string
+    password: string,
   ): Promise<string | undefined> {
     const encoder = new TextEncoder();
     const ssidEncoded = encoder.encode(ssid);
@@ -131,7 +208,7 @@ export class ImprovBluetoothLE extends EventTarget {
     try {
       const rpcResult = await this.sendRPCWithResponse(
         ImprovRPCCommand.SEND_WIFI_SETTINGS,
-        data
+        data,
       );
       this.logger.debug("Provisioned! Disconnecting gatt");
       // We're going to set this result manually in case we get RPC result first
@@ -151,13 +228,13 @@ export class ImprovBluetoothLE extends EventTarget {
 
   public async sendRPCWithResponse(
     command: ImprovRPCCommand,
-    data: Uint8Array
+    data: Uint8Array,
   ) {
     // Commands that receive feedback will finish when either
     // the state changes or the error code becomes not 0.
     if (this._rpcFeedback) {
       throw new Error(
-        "Only 1 RPC command that requires feedback can be active"
+        "Only 1 RPC command that requires feedback can be active",
       );
     }
 
