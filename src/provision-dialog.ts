@@ -590,6 +590,7 @@ class ProvisionDialog extends LitElement {
     }
 
     md-dialog {
+      --md-dialog-container-color: var(--improv-container-color, #fff);
       --md-dialog-container-max-block-size: none !important;
       max-height: 90vh !important;
     }
