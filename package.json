@@ -5,7 +5,7 @@
   "main": "dist/launch-button.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/improv-wifi/sdk-js"
+    "url": "https://github.com/improv-wifi/sdk-ble-js"
   },
   "author": "Improv Wi-Fi maintainers",
   "license": "Apache-2.0",
