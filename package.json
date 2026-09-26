@@ -18,7 +18,7 @@
     "@rollup/plugin-typescript": "^11.0.0",
     "@types/web-bluetooth": "^0.0.16",
     "prettier": "^2.8.3",
-    "rollup": "^3.10.0",
+    "rollup": "^4.53.3",
     "serve": "^14.1.2",
     "typescript": "^5.0.4"
   },
