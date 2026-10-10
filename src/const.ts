@@ -39,12 +39,15 @@ export const enum ImprovErrorState {
   UNKNOWN_RPC_COMMAND = 0x02,
   UNABLE_TO_CONNECT = 0x03,
   NOT_AUTHORIZED = 0x04,
+  BAD_HOSTNAME = 0x05,
   UNKNOWN_ERROR = 0xff,
 }
 
 export const enum ImprovRPCCommand {
   SEND_WIFI_SETTINGS = 0x01,
   IDENTIFY = 0x02,
+  GET_DEVICE_INFO = 0x03,
+  GET_WIFI_NETWORKS = 0x04,
 }
 
 export interface ImprovRPCResult {
@@ -54,6 +57,12 @@ export interface ImprovRPCResult {
 
 export const hasIdentifyCapability = (capabilities: number) =>
   (capabilities & 1) === 1;
+
+export const hasGetDeviceInfoCapability = (capabilities: number) =>
+  (capabilities & 2) === 2;
+
+export const hasGetWifiNetworksCapability = (capabilities: number) =>
+  (capabilities & 4) === 4;
 
 declare global {
   interface HTMLElementEventMap {
