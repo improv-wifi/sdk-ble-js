@@ -169,7 +169,7 @@ class ProvisionDialog extends LitElement {
 
   @state() private _busy = false;
 
-  private _error?: string;
+  @state() private _error?: string;
 
   @query("md-outlined-select") private _selectSSID?: MdOutlinedSelect;
   @query("md-outlined-text-field[name=ssid]")
@@ -359,7 +359,7 @@ class ProvisionDialog extends LitElement {
                   >
                   <span slot="headline">${network.ssid}</span>
                   <span slot="end" class="network-details">
-                    <span class="signal-strength">${network.rssi}dB</span>
+                    <span class="signal-strength">${network.rssi}dBm</span>
                     ${this._renderWifiSecurity(network.security)}
                   </span>
                 </md-select-option>`,
@@ -381,8 +381,6 @@ class ProvisionDialog extends LitElement {
           required
           label="Network Name"
           name="ssid"
-          @input=${(e: InputEvent) =>
-            (this._selectedSsid = (e.target as MdOutlinedTextField).value)}
         ></md-outlined-text-field>`
       : nothing}`;
   }
@@ -394,7 +392,7 @@ class ProvisionDialog extends LitElement {
   }
 
   private _renderImprovAuthorized() {
-    let error: string | undefined;
+    let error = this._error;
 
     switch (this._improvErrorState) {
       case ImprovErrorState.UNABLE_TO_CONNECT:
@@ -417,7 +415,6 @@ class ProvisionDialog extends LitElement {
       ${error ? html`<p class="error">${error}</p>` : nothing}
       ${this._renderNetworkName()}
       <md-outlined-text-field
-        required
         label="Password"
         name="password"
         type=${this._showPassword ? "text" : "password"}
@@ -494,6 +491,7 @@ class ProvisionDialog extends LitElement {
   }
 
   private async _scanWifiNetworks(event: Event) {
+    this._error = undefined;
     try {
       event.preventDefault();
       event.stopPropagation();
@@ -505,10 +503,10 @@ class ProvisionDialog extends LitElement {
   }
 
   private async _provision(event: Event) {
-    if (!this._selectedSsid) {
-      this._error = hasGetWifiNetworksCapability(this._improvCapabilities)
-        ? "Please select a network."
-        : "Please enter a Network Name.";
+    const ssid = this._selectedSsid ?? this._inputSSID?.value;
+    if (!ssid) {
+      // The SSID field is shown whenever no network is selected.
+      this._error = "Please enter a Network Name.";
       event.preventDefault();
       event.stopPropagation();
       return;
@@ -516,10 +514,7 @@ class ProvisionDialog extends LitElement {
     this._error = undefined;
     this._busy = true;
     try {
-      await this._client.provision(
-        this._selectedSsid,
-        this._inputPassword.value,
-      );
+      await this._client.provision(ssid, this._inputPassword.value);
     } catch (err) {
       // Ignore, error state takes care of this.
     } finally {
@@ -587,6 +582,9 @@ class ProvisionDialog extends LitElement {
       --md-dialog-container-max-block-size: none !important;
       --md-sys-color-primary: var(--improv-primary-color, #03a9f4);
       --md-sys-color-on-primary: var(--improv-on-primary-color, #fff);
+      --md-ref-typeface-brand: Roboto, sans-serif;
+      --md-ref-typeface-plain: Roboto, sans-serif;
+      font-family: Roboto, sans-serif;
     }
 
     md-dialog {

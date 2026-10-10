@@ -145,7 +145,7 @@ export class ImprovBluetoothLE extends EventTarget {
           deviceInfoResponse.values.length > 5
             ? deviceInfoResponse.values[5]
             : null,
-        ); // get device info on initialize() but it won't change so we don't need to expose it
+        );
       } catch (err) {
         console.warn("Failed to get device info, ignoring.", err);
       }
