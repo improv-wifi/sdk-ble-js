@@ -445,9 +445,13 @@ class ProvisionDialog extends LitElement {
   protected firstUpdated(changedProps: PropertyValues) {
     super.firstUpdated(changedProps);
     this._client.addEventListener("state-changed", () => {
-      this._state = "IMPROV-STATE";
       this._busy = false;
       this._improvCurrentState = this._client.currentState;
+      // While connecting, _connect() switches state once initialize() has
+      // read capabilities, device info and networks.
+      if (this._state !== "CONNECTING") {
+        this._state = "IMPROV-STATE";
+      }
     });
     this._client.addEventListener("error-changed", () => {
       this._improvErrorState = this._client.errorState;
