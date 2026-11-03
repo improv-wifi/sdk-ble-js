@@ -523,6 +523,10 @@ class ProvisionDialog extends LitElement {
       // Ignore, error state takes care of this.
     } finally {
       this._busy = false;
+      // _client.nextUrl is not reactive. If the device reported PROVISIONED
+      // before its RPC result, the success screen was rendered without the
+      // "Next" button; render again now that nextUrl is known.
+      this.requestUpdate();
     }
   }
 
