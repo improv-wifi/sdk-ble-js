@@ -620,6 +620,26 @@ describe("sendRPCWithResponse", () => {
     await expect(next).resolves.toBeDefined();
   });
 
+  it("emits error-changed with the new error state on every notification", async () => {
+    const { rig, improv } = setup({ capabilities: 0 });
+    const seen: ImprovErrorState[] = [];
+    improv.addEventListener("error-changed", () =>
+      seen.push(improv.errorState),
+    );
+    await improv.initialize();
+    // initialize() reads the initial error state once.
+    expect(seen).toEqual([ImprovErrorState.NO_ERROR]);
+
+    rig.errorState.notify([ImprovErrorState.UNABLE_TO_CONNECT]);
+    rig.errorState.notify([ImprovErrorState.NO_ERROR]);
+
+    expect(seen).toEqual([
+      ImprovErrorState.NO_ERROR,
+      ImprovErrorState.UNABLE_TO_CONNECT,
+      ImprovErrorState.NO_ERROR,
+    ]);
+  });
+
   it("does not reject the pending RPC on a NO_ERROR notification", async () => {
     const { rig, improv } = setup({ capabilities: 0 });
     await improv.initialize();

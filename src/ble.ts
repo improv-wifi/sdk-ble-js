@@ -271,6 +271,7 @@ export class ImprovBluetoothLE extends EventTarget {
         this._rpcFeedback = undefined;
       }
     }
+    this.dispatchEvent(new CustomEvent("error-changed"));
   }
 
   private _handleImprovRPCResultChange(encodedResult: DataView) {
