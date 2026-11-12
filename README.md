@@ -11,13 +11,13 @@ You can use the JavaScript SDK by adding the following HTML to your website:
 If you are using a bundler and JavaScript package manager, you can install the SDK via NPM:
 
 ```
-npm install --save improv-wifi-sdk
+npm install --save @improv-wifi/ble-sdk
 ```
 
 And then import it in your code:
 
 ```
-import 'improv-wifi-sdk';
+import '@improv-wifi/ble-sdk';
 ```
 
 ## Usage
