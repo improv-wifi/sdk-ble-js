@@ -1,6 +1,6 @@
 {
   "name": "@improv-wifi/ble-sdk",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Improv Wi-Fi BLE SDK for the browser",
   "main": "dist/launch-button.js",
   "repository": {
