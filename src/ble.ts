@@ -238,10 +238,24 @@ export class ImprovBluetoothLE extends EventTarget {
       );
     }
 
-    return await new Promise<ImprovRPCResult>((resolve, reject) => {
+    let write!: Promise<void>;
+    const result = await new Promise<ImprovRPCResult>((resolve, reject) => {
       this._rpcFeedback = { command, resolve, reject };
-      return this.sendRPC(command, data);
+      write = this.sendRPC(command, data);
+      // A failed write never produces a result: fail the RPC instead of
+      // leaving it (and the caller) pending forever.
+      write.catch((err) => {
+        if (this._rpcFeedback?.resolve === resolve) {
+          this._rpcFeedback = undefined;
+        }
+        reject(err);
+      });
     });
+    // Devices may notify the result before the write is acknowledged. Wait for
+    // the write to finish so the next GATT operation doesn't fail with
+    // "GATT operation already in progress".
+    await write;
+    return result;
   }
 
   public sendRPC(command: ImprovRPCCommand, data: Uint8Array) {
