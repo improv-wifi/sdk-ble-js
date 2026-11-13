@@ -1,4 +1,4 @@
-import { nodeResolve } from "@rollup/plugin-node-resolve";
+import nodeResolve from "@rollup/plugin-node-resolve";
 import terser from "@rollup/plugin-terser";
 
 const config = {
@@ -16,7 +16,7 @@ if (process.env.NODE_ENV === "production") {
     terser({
       ecma: 2019,
       toplevel: true,
-      output: {
+      format: {
         comments: false,
       },
     })

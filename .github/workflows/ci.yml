@@ -9,16 +9,26 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   build:
+    name: Build and test
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744  # v3.6.0
-      - name: Use Node.js
-        uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610  # v3.9.1
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.1.0
         with:
-          node-version: 16
-      - run: npm ci
-      - run: script/build
-      - run: npm exec -- prettier --check src
+          node-version: 24
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: script/build
+      - name: Test
+        run: npm test
+      - name: Check formatting
+        run: npm exec -- prettier --check src test

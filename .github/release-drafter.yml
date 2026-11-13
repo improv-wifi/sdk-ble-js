@@ -1,8 +1,32 @@
+name-template: "$RESOLVED_VERSION"
+tag-template: "$RESOLVED_VERSION"
 categories:
   - title: "⬆️ Dependencies"
     collapse-after: 1
-    labels:
-      - "dependencies"
+    when:
+      labels:
+        - "dependencies"
+  - type: "version-resolver"
+    semver-increment: "major"
+    when:
+      labels:
+        - "major"
+        - "breaking-change"
+  - type: "version-resolver"
+    semver-increment: "minor"
+    when:
+      labels:
+        - "minor"
+        - "enhancement"
+        - "new-feature"
+  - type: "version-resolver"
+    semver-increment: "patch"
+header: |
+  <!-- build-pending -->
+  > [!WARNING]
+  > Do not publish this release yet. The package is still being built and attached to this draft. This note is removed automatically once the tarball is uploaded.
+  <!-- /build-pending -->
+
 template: |
   ## What's Changed
 

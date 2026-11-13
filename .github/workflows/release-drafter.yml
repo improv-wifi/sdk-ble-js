@@ -1,14 +1,122 @@
-name: Release Drafter
+name: Draft release
 
 on:
   push:
     branches:
       - main
 
+permissions: {}
+
 jobs:
   update_release_draft:
+    name: Update draft
+    # Shared with the Attach to draft job in build-release.yml so the two never
+    # modify the draft at the same time. Set on the job (not the workflow) so a
+    # skipped bump-commit run never takes a place in the queue.
+    concurrency:
+      group: release-draft
+      cancel-in-progress: false
+    # Skip the push of our own version bump commit. Rerunning here would
+    # re-add the build-pending note and delete the tarball after the build
+    # for that commit may already have finished.
+    if: ${{ !(startsWith(github.event.head_commit.message, 'Bump version to ') && endsWith(github.event.head_commit.author.name, '[bot]')) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: release-drafter/release-drafter@09c613e259eb8d4e7c81c2cb00618eb5fc4575a7  # v5.25.0
+      - name: Create app token
+        id: app-token
+        uses: actions/create-github-app-token@v3.3.0
+        with:
+          client-id: ${{ vars.IMPROV_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.IMPROV_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: read
+
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+
+      - name: Update release notes
+        id: drafter
+        uses: release-drafter/release-drafter@v7.10.0
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Bump version
+        id: bump
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RESOLVED_VERSION: ${{ steps.drafter.outputs.resolved_version }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          if [ -z "$RESOLVED_VERSION" ]; then
+            echo "::error::release-drafter did not output a resolved_version."
+            exit 1
+          fi
+          npm version --no-git-tag-version --allow-same-version --ignore-scripts "$RESOLVED_VERSION"
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "Version already $RESOLVED_VERSION, nothing to commit."
+          else
+            if ! bot_id=$(gh api "users/${APP_SLUG}[bot]" --jq .id); then
+              echo "::error::Failed to look up the GitHub App bot user."
+              exit 1
+            fi
+            git config user.name "${APP_SLUG}[bot]"
+            git config user.email "${bot_id}+${APP_SLUG}[bot]@users.noreply.github.com"
+            git add package.json package-lock.json
+            git commit -m "Bump version to $RESOLVED_VERSION"
+            if ! git push origin HEAD:main; then
+              echo "Push failed, rebasing onto latest main and retrying once."
+              git pull --rebase origin main
+              git push origin HEAD:main
+            fi
+          fi
+          sha=$(git rev-parse HEAD)
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Pin draft to commit
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          RELEASE_ID: ${{ steps.drafter.outputs.id }}
+          SHA: ${{ steps.bump.outputs.sha }}
+        run: |
+          if ! release=$(gh api "repos/$REPO/releases/$RELEASE_ID"); then
+            echo "::error::Failed to fetch release $RELEASE_ID."
+            exit 1
+          fi
+          tag=$(jq -r '.tag_name' <<< "$release")
+          case "$tag" in
+            untagged-*)
+              echo "::error::Draft release has placeholder tag $tag; refusing to PATCH."
+              exit 1
+              ;;
+          esac
+          jq --arg sha "$SHA" '{tag_name, name, body, prerelease, draft: true, target_commitish: $sha}' <<< "$release" \
+            | gh api -X PATCH "repos/$REPO/releases/$RELEASE_ID" --input -
+
+      - name: Remove stale tarball
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          RELEASE_ID: ${{ steps.drafter.outputs.id }}
+        run: |
+          if ! assets=$(gh api "repos/$REPO/releases/$RELEASE_ID/assets" --paginate); then
+            echo "::error::Failed to list release assets."
+            exit 1
+          fi
+          if ! old_ids=$(jq -s -r '.[][] | select(.name | endswith(".tgz")) | .id' <<< "$assets"); then
+            echo "::error::Failed to parse release assets."
+            exit 1
+          fi
+          for asset_id in $old_ids; do
+            gh api -X DELETE "repos/$REPO/releases/assets/$asset_id"
+          done

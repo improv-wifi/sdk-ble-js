@@ -1,30 +1,43 @@
 {
-  "name": "improv-wifi-sdk",
-  "version": "1.4.1",
-  "description": "Improv Wi-Fi SDK for the browser",
+  "name": "@improv-wifi/ble-sdk",
+  "version": "1.4.2",
+  "description": "Improv Wi-Fi BLE SDK for the browser",
   "main": "dist/launch-button.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/improv-wifi/sdk-ble-js"
+    "url": "git+https://github.com/improv-wifi/sdk-ble-js.git"
   },
   "author": "Improv Wi-Fi maintainers",
   "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "prepublishOnly": "script/build"
+    "prepublishOnly": "script/build",
+    "test": "vitest run --coverage"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.3",
-    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-terser": "^1.0.0",
     "@rollup/plugin-typescript": "^12.3.0",
     "@types/web-bluetooth": "^0.0.21",
+    "@vitest/coverage-v8": "^5.1.0",
+    "happy-dom": "^21.0.4",
     "prettier": "^3.7.4",
-    "rollup": "^4.53.5",
-    "serve": "^14.2.5",
-    "typescript": "^5.9.3"
+    "rollup": "^4.62.2",
+    "serve": "^14.2.6",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
   },
   "dependencies": {
-    "@material/web": "2.4.1",
-    "lit": "^3.3.1",
+    "@material/web": "^2.4.1",
+    "lit": "^3.3.3",
     "tslib": "^2.8.1"
+  },
+  "files": [
+    "dist"
+  ],
+  "overrides": {
+    "compression": "^1.8.2"
   }
 }
