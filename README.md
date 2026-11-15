@@ -5,7 +5,7 @@
 You can use the JavaScript SDK by adding the following HTML to your website:
 
 ```html
-<script type="module" src="https://www.improv-wifi.com/sdk-js/launch-button.js"></script>
+<script type="module" src="https://unpkg.com/@improv-wifi/ble-sdk@2/dist/web/launch-button.js"></script>
 ```
 
 If you are using a bundler and JavaScript package manager, you can install the SDK via NPM:
