@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions: {}
 
@@ -18,8 +19,10 @@ jobs:
       cancel-in-progress: false
     # Skip the push of our own version bump commit. Rerunning here would
     # re-add the build-pending note and delete the tarball after the build
-    # for that commit may already have finished.
-    if: ${{ !(startsWith(github.event.head_commit.message, 'Bump version to ') && endsWith(github.event.head_commit.author.name, '[bot]')) }}
+    # for that commit may already have finished. Also refuse manual dispatches
+    # from other branches: this job always drafts from main, and the build only
+    # follows runs from main, so it would delete the tarball without a rebuild.
+    if: ${{ github.ref == 'refs/heads/main' && !(startsWith(github.event.head_commit.message, 'Bump version to ') && endsWith(github.event.head_commit.author.name, '[bot]')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Create app token

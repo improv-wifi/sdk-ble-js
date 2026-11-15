@@ -8,9 +8,12 @@ on:
 
 # Only events that will build share the cancelling group, so a newer build
 # replaces an older one. Everything else (failed or skipped drafting runs, the
-# bot's own bump commit) gets a unique group and cannot cancel a real build.
+# bot's own bump commit pushed to main) gets a unique group and cannot cancel a
+# real build. A manually dispatched drafting run always builds, even when the
+# head commit of main is the bump commit, because it deletes the draft's
+# tarball and must rebuild it.
 concurrency:
-  group: build-release-${{ (github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && !startsWith(github.event.workflow_run.head_commit.message, 'Bump version to '))) && 'build' || github.run_id }}
+  group: build-release-${{ (github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'workflow_dispatch' || (github.event.workflow_run.event == 'push' && !startsWith(github.event.workflow_run.head_commit.message, 'Bump version to '))))) && 'build' || github.run_id }}
   cancel-in-progress: true
 
 permissions: {}
@@ -18,7 +21,7 @@ permissions: {}
 jobs:
   find-draft:
     name: Find draft
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main')
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch'))
     runs-on: ubuntu-latest
     permissions: {}
     outputs:
