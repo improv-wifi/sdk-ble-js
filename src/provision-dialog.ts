@@ -445,9 +445,13 @@ class ProvisionDialog extends LitElement {
   protected firstUpdated(changedProps: PropertyValues) {
     super.firstUpdated(changedProps);
     this._client.addEventListener("state-changed", () => {
-      this._state = "IMPROV-STATE";
       this._busy = false;
       this._improvCurrentState = this._client.currentState;
+      // While connecting, _connect() switches state once initialize() has
+      // read capabilities, device info and networks.
+      if (this._state !== "CONNECTING") {
+        this._state = "IMPROV-STATE";
+      }
     });
     this._client.addEventListener("error-changed", () => {
       this._improvErrorState = this._client.errorState;
@@ -519,6 +523,10 @@ class ProvisionDialog extends LitElement {
       // Ignore, error state takes care of this.
     } finally {
       this._busy = false;
+      // _client.nextUrl is not reactive. If the device reported PROVISIONED
+      // before its RPC result, the success screen was rendered without the
+      // "Next" button; render again now that nextUrl is known.
+      this.requestUpdate();
     }
   }
 
